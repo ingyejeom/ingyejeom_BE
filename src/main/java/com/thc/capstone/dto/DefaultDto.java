@@ -8,25 +8,24 @@ import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
-@Getter @Setter @AllArgsConstructor @NoArgsConstructor
 public class DefaultDto {
-    @SuperBuilder
-    public static class CreateReqDto {
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
+    public static class CreateResDto {
         Long id;
     }
 
-    @SuperBuilder
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class UpdateReqDto {
         Long id;
         Boolean deleted;
     }
 
-    @SuperBuilder
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class DetailReqDto {
         Long id;
     }
 
-    @SuperBuilder
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class DetailResDto {
         Long id;
         Boolean deleted;
@@ -34,7 +33,7 @@ public class DefaultDto {
         LocalDateTime modifiedAt;
     }
 
-    @SuperBuilder
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class ListReqDto {
         Boolean deleted;
     }
