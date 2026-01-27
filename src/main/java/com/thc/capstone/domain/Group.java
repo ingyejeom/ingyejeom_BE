@@ -33,6 +33,9 @@ public class Group extends AuditingFields {
         if(param.getDeleted() != null){
             setDeleted(param.getDeleted());
         }
+        if(param.getGroupName() != null){
+            setGroupName(param.getGroupName());
+        }
     }
 
     public DefaultDto.CreateResDto toCreateResDto(){
