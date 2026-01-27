@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0/EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thc.capstone.mapper.SpaceMapper">
+    <select id="detail" parameterType="hashMap"
+            resultType="com.thc.capstone.dto.SpaceDto$DetailResDto">
+        SELECT space.id
+             , space.deleted
+             , space.created_at as createdAt
+             , space.modified_at as modifiedAt
+
+             , space.work_name as workName
+            , space.space_code as spaceName
+            , group.group_name as groupName
+        FROM space LEFT JOIN group ON space.id = group.space_id
+        WHERE space.id = #{id}
+    </select>
+
+    <!--  공통 WHERE 절  -->
+    <sql id="commmonWhere">
+        WHERE space.id is not null
+        <if test = "deleted != null">AND space.deleted = #{deleted}</if>
+        <if test = "work_name != null and work_name !=' '">AND space.work_name LIKE CONCAT('%', #{work_name})</if>
+    </sql>
+
+    <select id="list" parameterType="hashMap"
+            resultType="com.thc.capstone.dto.SpaceDto$DetailResDto">
+        SELECT space.id
+        FROM space
+        WHERE space.id is not null
+        <include refid="commonWhere"/>
+    </select>
+</mapper>
