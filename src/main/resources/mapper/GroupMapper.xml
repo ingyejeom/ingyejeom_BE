@@ -8,13 +8,12 @@
              , group.created_at as createdAt
              , group.modified_at as modifiedAt
              , group.group_name as groupName
-             , group.user_id as userId
              , group.space_id as spaceId
 
-            , user.id as userId
             , space.id as spaceId
-        FROM group LEFT JOIN user ON group.userId = user.id
-                   LEFT JOIN space ON group.spaceId = space.id
+            , space.work_name as spaceWorkName
+            , space.space_code as spaceSapceCode
+        FROM group LEFT JOIN space ON group.space_id = space.id
         WHERE group.id = #{id}
     </select>
 

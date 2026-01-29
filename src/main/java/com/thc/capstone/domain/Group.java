@@ -13,20 +13,16 @@ public class Group extends AuditingFields {
     String groupName;
 
     @Setter
-    Long userId;
-
-    @Setter
     Long spaceId;
 
     protected Group() {}
-    private Group(String groupName, Long userId, Long spaceId) {
+    private Group(String groupName, Long spaceId) {
         this.groupName = groupName;
-        this.userId = userId;
         this.spaceId = spaceId;
     }
 
-    public static Group of (String groupName, Long userId, Long spaceId) {
-        return new Group(groupName, userId, spaceId);
+    public static Group of (String groupName, Long spaceId) {
+        return new Group(groupName, spaceId);
     }
 
     public void update(GroupDto.UpdateReqDto param){

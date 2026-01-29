@@ -11,11 +11,10 @@ public class GroupDto {
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor
     public static class CreateReqDto {
         String groupName;
-        Long userId;
         Long spaceId;
 
         public Group toEntity(){
-            return Group.of(getGroupName(), getUserId(), getSpaceId());
+            return Group.of(getGroupName(), getSpaceId());
         }
     }
 
@@ -27,7 +26,6 @@ public class GroupDto {
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class DetailResDto extends DefaultDto.DetailResDto {
         String groupName;
-        Long userId;
         Long spaceId;
     }
 
