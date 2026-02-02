@@ -3,32 +3,26 @@
 <mapper namespace="com.thc.capstone.mapper.GroupMapper">
     <select id="detail" parameterType="hashMap"
             resultType="com.thc.capstone.dto.GroupDto$DetailResDto">
-        SELECT group.id
-             , group.deleted
-             , group.created_at as createdAt
-             , group.modified_at as modifiedAt
-             , group.group_name as groupName
-             , group.space_id as spaceId
-
-            , space.id as spaceId
-            , space.work_name as spaceWorkName
-            , space.space_code as spaceSapceCode
-        FROM group LEFT JOIN space ON group.space_id = space.id
-        WHERE group.id = #{id}
+        SELECT tb_group.id
+             , tb_group.deleted
+             , tb_group.created_at as createdAt
+             , tb_group.modified_at as modifiedAt
+             , tb_group.group_name as groupName
+        FROM tb_group
+        WHERE tb_group.id = #{id}
     </select>
 
     <!--  공통 WHERE 절  -->
-    <sql id="commmonWhere">
-        WHERE group.id is not null
-        <if test = "deleted != null">AND group.deleted = #{deleted}</if>
-        <if test = "groupName != null and groupName !=' '">AND group.group_name LIKE CONCAT('%', #{groupName})</if>
+    <sql id="commonWhere">
+        WHERE tb_group.id is not null
+        <if test = 'deleted != null'>AND tb_group.deleted = #{deleted}</if>
+        <if test = 'groupName != null and groupName !=" "'>AND tb_group.group_name LIKE CONCAT('%', #{groupName})</if>
     </sql>
 
     <select id="list" parameterType="hashMap"
             resultType="com.thc.capstone.dto.GroupDto$DetailResDto">
-        SELECT group.id
-        FROM group
-        WHERE group.id is not null
+        SELECT tb_group.id
+        FROM tb_group
         <include refid="commonWhere"/>
     </select>
 </mapper>

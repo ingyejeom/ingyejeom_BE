@@ -8,13 +8,13 @@ import java.util.List;
 
 @Service
 public interface GroupService {
-    DefaultDto.CreateResDto create(GroupDto.CreateReqDto param);
+    DefaultDto.CreateResDto create(GroupDto.CreateReqDto param, Long reqUserId);
 
-    void update(GroupDto.UpdateReqDto param);
+    void update(GroupDto.UpdateReqDto param, Long reqUserId);
 
-    void delete(GroupDto.UpdateReqDto param);
+    void delete(GroupDto.UpdateReqDto param, Long reqUserId);
 
-    GroupDto.DetailResDto detail(DefaultDto.DetailReqDto param);
+    GroupDto.DetailResDto detail(DefaultDto.DetailReqDto param, Long reqUserId);
 
-    List<GroupDto.DetailResDto> list(GroupDto.ListReqDto param);
+    List<GroupDto.DetailResDto> list(GroupDto.ListReqDto param, Long reqUserId);
 }

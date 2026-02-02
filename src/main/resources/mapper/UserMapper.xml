@@ -24,7 +24,7 @@
     </select>
 
     <!--  공통 WHERE 절  -->
-    <sql id="commmonWhere">
+    <sql id="commonWhere">
         WHERE user.id is not null
         <if test = "deleted != null">AND user.deleted = #{deleted}</if>
         <if test = "phone != null and phone !=' '">AND user.phone LIKE CONCAT('%', #{phone})</if>

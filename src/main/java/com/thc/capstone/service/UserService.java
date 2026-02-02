@@ -8,15 +8,13 @@ import java.util.List;
 
 @Service
 public interface UserService {
-    DefaultDto.CreateResDto login(UserDto.LoginReqDto param);
+    DefaultDto.CreateResDto create(UserDto.CreateReqDto param, Long reqUserId);
 
-    DefaultDto.CreateResDto create(UserDto.CreateReqDto param);
+    void update(UserDto.UpdateReqDto param, Long reqUserId);
 
-    void update(UserDto.UpdateReqDto param);
+    void delete(UserDto.UpdateReqDto param, Long reqUserId);
 
-    void delete(UserDto.UpdateReqDto param);
-
-    UserDto.DetailResDto detail(DefaultDto.DetailReqDto param);
+    UserDto.DetailResDto detail(DefaultDto.DetailReqDto param, Long reqUserId);
 
     List<UserDto.DetailResDto> list(UserDto.ListReqDto param);
 }

@@ -8,13 +8,13 @@ import java.util.List;
 
 @Service
 public interface SpaceService {
-    DefaultDto.CreateResDto create(SpaceDto.CreateReqDto param);
+    void create(SpaceDto.MultiCreateReqDto param, Long reqUserId);
 
-    void update(SpaceDto.UpdateReqDto param);
+    void update(SpaceDto.UpdateReqDto param, Long reqUserId);
 
-    void delete(SpaceDto.UpdateReqDto param);
+    void delete(SpaceDto.UpdateReqDto param, Long reqUserId);
 
-    SpaceDto.DetailResDto detail(DefaultDto.DetailReqDto param);
+    SpaceDto.DetailResDto detail(DefaultDto.DetailReqDto param, Long reqUserId);
 
-    List<SpaceDto.DetailResDto> list(SpaceDto.ListReqDto param);
+    List<SpaceDto.DetailResDto> list(SpaceDto.ListReqDto param, Long reqUserId);
 }

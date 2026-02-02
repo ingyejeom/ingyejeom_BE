@@ -8,6 +8,10 @@ import java.util.List;
 
 @Service
 public interface UserSpaceService {
+    void join(UserSpaceDto.JoinReqDto param, Long reqUserId);
+
+    void invite(UserSpaceDto.InviteReqDto param, Long reqUserId);
+
     DefaultDto.CreateResDto create(UserSpaceDto.CreateReqDto param);
 
     void update(UserSpaceDto.UpdateReqDto param);
@@ -16,5 +20,5 @@ public interface UserSpaceService {
 
     UserSpaceDto.DetailResDto detail(DefaultDto.DetailReqDto param);
 
-    List<UserSpaceDto.DetailResDto> list(UserSpaceDto.ListReqDto param);
+    List<UserSpaceDto.DetailResDto> list(UserSpaceDto.ListReqDto param, Long reqUserId);
 }

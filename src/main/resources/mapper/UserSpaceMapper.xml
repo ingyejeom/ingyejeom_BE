@@ -11,22 +11,28 @@
              , user_space.status
              , user_space.user_id as userId
              , user_space.space_id as spaceId
+
+            , space.work_name as workName
+            , space.space_code as spaceCode
+            , tb_group.group_name as groupName
         FROM user_space
+        LEFT JOIN space ON user_space.space_id = space.id
+        LEFT JOIN tb_group ON space.group_id = tb_group.id
         WHERE user_space.id = #{id}
     </select>
 
     <!--  공통 WHERE 절  -->
-    <sql id="commmonWhere">
+    <sql id="commonWhere">
         WHERE user_space.id is not null
         <if test = "deleted != null">AND user_space.deleted = #{deleted}</if>
-        <if test = "status != null and status !=' '">AND user_space.status LIKE CONCAT('%', #{status})</if>
     </sql>
 
     <select id="list" parameterType="hashMap"
             resultType="com.thc.capstone.dto.UserSpaceDto$DetailResDto">
         SELECT user_space.id
         FROM user_space
-        WHERE user_space.id is not null
         <include refid="commonWhere"/>
+        AND user_space.user_id = #{reqUserId}
+        AND user_space.status = 'ACTIVE'
     </select>
 </mapper>

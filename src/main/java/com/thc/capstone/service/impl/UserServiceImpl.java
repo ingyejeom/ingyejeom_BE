@@ -7,6 +7,7 @@ import com.thc.capstone.mapper.UserMapper;
 import com.thc.capstone.repository.UserRepository;
 import com.thc.capstone.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,31 +18,23 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
     final UserRepository userRepository;
     final UserMapper userMapper;
+    final BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @Override
-    public DefaultDto.CreateResDto login(UserDto.LoginReqDto param) {
-        User user = userRepository.findByUsernameAndPassword(param.getUsername(), param.getPassword());
-        if(user == null) {
-            throw new RuntimeException("존재하지 않는 계정입니다");
-        }
-
-        return DefaultDto.CreateResDto.builder()
-                .id(user.getId())
-                .build();
-    }
-
-    @Override
-    public DefaultDto.CreateResDto create(UserDto.CreateReqDto param) {
+    public DefaultDto.CreateResDto create(UserDto.CreateReqDto param, Long reqUserId) {
         User user = userRepository.findByUsername(param.getUsername());
         if(user != null) {
             throw new RuntimeException("이미 존재하는 아이디입니다");
         }
 
-        return userRepository.save(param.toEntity()).toCreateResDto();
+        param.setPassword(bCryptPasswordEncoder.encode(param.getPassword()));
+        User newUser = userRepository.save(param.toEntity());
+
+        return newUser.toCreateResDto();
     }
 
     @Override
-    public void update(UserDto.UpdateReqDto param) {
+    public void update(UserDto.UpdateReqDto param, Long reqUserId) {
         User user = userRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("데이터가 없습니다"));
 
@@ -50,21 +43,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void delete(UserDto.UpdateReqDto param) {
+    public void delete(UserDto.UpdateReqDto param, Long reqUserId) {
         update(UserDto.UpdateReqDto.builder()
                 .id(param.getId())
                 .deleted(true)
-                .build());
+                .build(), reqUserId);
     }
 
     public UserDto.DetailResDto get(DefaultDto.DetailReqDto param) {
-        UserDto.DetailResDto res = userMapper.detail(param.getId());
-
-        return res;
+        return userMapper.detail(param.getId());
     }
 
     @Override
-    public UserDto.DetailResDto detail(DefaultDto.DetailReqDto param) {
+    public UserDto.DetailResDto detail(DefaultDto.DetailReqDto param, Long reqUserId) {
         return get(param);
     }
 

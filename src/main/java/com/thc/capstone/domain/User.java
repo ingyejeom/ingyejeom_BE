@@ -21,6 +21,7 @@ public class User extends AuditingFields {
     String name;
 
     @Setter
+    @Column(nullable = false, unique = true)
     String email;
 
     protected User() {}

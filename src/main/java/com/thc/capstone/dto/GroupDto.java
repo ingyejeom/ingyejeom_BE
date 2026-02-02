@@ -11,10 +11,9 @@ public class GroupDto {
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor
     public static class CreateReqDto {
         String groupName;
-        Long spaceId;
 
         public Group toEntity(){
-            return Group.of(getGroupName(), getSpaceId());
+            return Group.of(getGroupName());
         }
     }
 
@@ -26,7 +25,6 @@ public class GroupDto {
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class DetailResDto extends DefaultDto.DetailResDto {
         String groupName;
-        Long spaceId;
     }
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder

@@ -2,9 +2,11 @@ package com.thc.capstone.controller;
 
 import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.UserSpaceDto;
+import com.thc.capstone.security.PrincipalDetails;
 import com.thc.capstone.service.UserSpaceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,6 +16,24 @@ import java.util.List;
 @RestController
 public class UserSpaceRestController {
     final UserSpaceService userSpaceService;
+    public Long getUserId(PrincipalDetails principalDetails) {
+        if(principalDetails != null && principalDetails.getUser() != null) {
+            return principalDetails.getUser().getId();
+        }
+        return null;
+    }
+
+    @PostMapping("/join")
+    public ResponseEntity<Void> join(@RequestBody UserSpaceDto.JoinReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        userSpaceService.join(param, getUserId(principalDetails));
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/invite")
+    public ResponseEntity<Void> invite(@RequestBody UserSpaceDto.InviteReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        userSpaceService.invite(param, getUserId(principalDetails));
+        return ResponseEntity.ok().build();
+    }
 
     @PostMapping("")
     public ResponseEntity<DefaultDto.CreateResDto> create(@RequestBody UserSpaceDto.CreateReqDto param) {
@@ -40,7 +60,7 @@ public class UserSpaceRestController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity<List<UserSpaceDto.DetailResDto>> list(UserSpaceDto.ListReqDto param) {
-        return ResponseEntity.ok(userSpaceService.list(param));
+    public ResponseEntity<List<UserSpaceDto.DetailResDto>> list(UserSpaceDto.ListReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        return ResponseEntity.ok(userSpaceService.list(param, getUserId(principalDetails)));
     }
 }

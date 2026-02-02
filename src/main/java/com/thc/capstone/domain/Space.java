@@ -17,14 +17,18 @@ public class Space extends AuditingFields {
     @Setter
     String spaceCode;
 
+    @Setter
+    Long groupId;
+
     protected Space() {}
-    private Space(String workName, String spaceCode) {
+    private Space(String workName, String spaceCode, Long groupId) {
         this.workName = workName;
         this.spaceCode = spaceCode;
+        this.groupId = groupId;
     }
 
-    public static Space of (String workName, String spaceCode) {
-        return new Space(workName, spaceCode);
+    public static Space of (String workName, String spaceCode, Long groupId) {
+        return new Space(workName, spaceCode, groupId);
     }
 
     public void update(SpaceDto.UpdateReqDto param){

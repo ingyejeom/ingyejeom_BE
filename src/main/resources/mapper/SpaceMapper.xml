@@ -9,24 +9,22 @@
              , space.modified_at as modifiedAt
 
              , space.work_name as workName
-            , space.space_code as spaceName
-            , group.group_name as groupName
-        FROM space LEFT JOIN group ON space.id = group.space_id
+            , space.space_code as spaceCode
+        FROM space
         WHERE space.id = #{id}
     </select>
 
     <!--  공통 WHERE 절  -->
-    <sql id="commmonWhere">
+    <sql id="commonWhere">
         WHERE space.id is not null
-        <if test = "deleted != null">AND space.deleted = #{deleted}</if>
-        <if test = "work_name != null and work_name !=' '">AND space.work_name LIKE CONCAT('%', #{work_name})</if>
+        <if test = 'deleted != null'>AND space.deleted = #{deleted}</if>
+        <if test = 'workName != null and workName !=" "'>AND space.work_name LIKE CONCAT('%', #{workName})</if>
     </sql>
 
     <select id="list" parameterType="hashMap"
             resultType="com.thc.capstone.dto.SpaceDto$DetailResDto">
         SELECT space.id
         FROM space
-        WHERE space.id is not null
         <include refid="commonWhere"/>
     </select>
 </mapper>

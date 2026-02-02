@@ -3,26 +3,24 @@ package com.thc.capstone.domain;
 import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.GroupDto;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Entity
+@Table(name = "tb_group")
 public class Group extends AuditingFields {
     @Setter
     String groupName;
 
-    @Setter
-    Long spaceId;
-
     protected Group() {}
-    private Group(String groupName, Long spaceId) {
+    private Group(String groupName) {
         this.groupName = groupName;
-        this.spaceId = spaceId;
     }
 
-    public static Group of (String groupName, Long spaceId) {
-        return new Group(groupName, spaceId);
+    public static Group of (String groupName) {
+        return new Group(groupName);
     }
 
     public void update(GroupDto.UpdateReqDto param){

@@ -10,6 +10,19 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 public class UserSpaceDto {
+    // 스페이스 참여를 위한 DTO
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class JoinReqDto {
+        private String spaceCode;
+    }
+
+    // 스페이스 초대를 위한 DTO
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    public static class InviteReqDto {
+        private String email;
+        private Long spaceId;
+    }
+
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor
     public static class CreateReqDto {
         Role role;
@@ -34,6 +47,10 @@ public class UserSpaceDto {
         UserSpaceStatus status;
         Long userId;
         Long spaceId;
+
+        String groupName;
+        String workName;
+        String spaceCode;
     }
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
