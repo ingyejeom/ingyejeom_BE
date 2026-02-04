@@ -79,12 +79,17 @@
             success: function (data, status, xhr) {
                 let refreshToken = xhr.getResponseHeader("RefreshToken");
 
+                if(!refreshToken) {
+                    alert("로그인 실패");
+                    return;
+                }
+
                 localStorage.setItem("refreshToken", refreshToken);
 
                 get_access_token();
             },
             error: function (data, status, err) {
-                alert("error :" + JSON.stringify(data));
+                alert("로그인 실패: 아이디나 비밀번호를 확인해주세요.");
             },
             complete: function () {
             }

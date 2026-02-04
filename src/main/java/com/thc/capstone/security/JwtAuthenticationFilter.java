@@ -36,21 +36,20 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         Authentication authentication = null;
         UserDto.LoginReqDto userLoginDto = null;
 
-        // 로그인에 필요한 아이디랑 비번이 있는지 확인
         try {
             userLoginDto = objectMapper.readValue(request.getInputStream(), UserDto.LoginReqDto.class);
         } catch (IOException e) {
-            System.out.println("Login attemptAuthentication : Not Enough Parameters");
+            // 요청 데이터 파싱 에러는 RuntimeException 등으로 던져서 처리하거나 로그 남김
+            throw new RuntimeException("Login Request Parsing Error", e);
         }
 
-        // 로그인에 필요한 아이디랑 비번으로 실제로 존재하는 고객인지 확인
-        // 해당 정보로 Authentication 객체 생성
-        try {
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userLoginDto.getUsername(), userLoginDto.getPassword());
-            authentication = authenticationManager.authenticate(authenticationToken);
-        } catch (AuthenticationException e) {
-            System.out.println("Login attemptAuthentication : username, password not matched");
-        }
+        // 아이디/비번 토큰 생성
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(userLoginDto.getUsername(), userLoginDto.getPassword());
+
+        // authenticate 메서드는 실패 시 AuthenticationException을 던집니다.
+        // 이를 try-catch로 잡지 않아야 Spring Security가 자동으로 unsuccessfulAuthentication을 호출합니다.
+        authentication = authenticationManager.authenticate(authenticationToken);
 
         return authentication;
     }
