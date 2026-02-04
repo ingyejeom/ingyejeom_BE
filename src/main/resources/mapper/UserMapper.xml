@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0/EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thc.capstone.mapper.UserMapper">
+    <select id="detail" parameterType="hashMap"
+            resultType="com.thc.capstone.dto.UserDto$DetailResDto">
+        SELECT user.id
+             , user.deleted
+             , user.created_at as createdAt
+             , user.modified_at as modifiedAt
+
+             , user.username
+             , user.name
+             , user.email
+        FROM user
+        WHERE user.id = #{id}
+    </select>
+
+    <select id="list" parameterType="hashMap"
+            resultType="com.thc.capstone.dto.UserDto$DetailResDto">
+        SELECT user.id
+        FROM user
+        WHERE user.id is not null
+        <if test="deleted != null">AND user.deleted = #{deleted}</if>
+    </select>
+
+    <!--  공통 WHERE 절  -->
+    <sql id="commonWhere">
+        WHERE user.id is not null
+        <if test = "deleted != null">AND user.deleted = #{deleted}</if>
+        <if test = "phone != null and phone !=' '">AND user.phone LIKE CONCAT('%', #{phone})</if>
+    </sql>
+
+    <!--  사용법  -->
+    <!--  <include refid="commonWhere"/>  -->
+</mapper>

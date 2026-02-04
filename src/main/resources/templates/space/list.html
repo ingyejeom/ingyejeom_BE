@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>내 스페이스 목록</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #ffffff; margin: 0; padding: 40px; }
+        .header-buttons { display: flex; gap: 20px; margin-bottom: 50px; }
+        .btn-header { width: 120px; height: 50px; line-height: 50px; background-color: #e9ecef; border: 1px solid #ced4da; text-align: center; font-size: 16px; color: #333; text-decoration: none; cursor: pointer; border-radius: 4px; }
+        .btn-header:hover { background-color: #dee2e6; }
+        h2 { font-size: 24px; color: #555; margin-bottom: 20px; font-weight: normal; }
+        .space-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 30px; }
+        .space-card { background-color: #f8f9fa; border: 1px solid #ced4da; padding: 25px; height: 180px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; }
+        .card-top { font-size: 18px; font-weight: 600; color: #333; margin-bottom: 10px; }
+        .card-middle { font-size: 14px; color: #666; }
+        .card-bottom { display: flex; justify-content: flex-end; align-items: center; gap: 15px; }
+        .role-badge { font-size: 14px; color: #555; font-weight: bold; }
+        .btn-invite { padding: 6px 15px; background-color: #868e96; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+        .btn-invite:hover { background-color: #495057; }
+    </style>
+</head>
+<body>
+
+<div class="header-buttons">
+    <a href="/space/create" class="btn-header">생성</a>
+    <a href="/space/join" class="btn-header">참여</a>
+    <div class="btn-header" onclick="alert('삭제 기능은 준비중입니다.')">삭제</div>
+</div>
+
+<h2>내 스페이스</h2>
+
+<div id="space_list" class="space-grid"></div>
+
+<script>
+    $(document).ready(function(){
+        let accessToken = localStorage.getItem("accessToken");
+        if(accessToken){
+            $.ajaxSetup({
+                beforeSend: function(xhr){
+                    if (!accessToken.startsWith("Bearer ")) accessToken = "Bearer " + accessToken;
+                    xhr.setRequestHeader("Authorization", accessToken);
+                }
+            });
+        }
+        loadSpaceList();
+    });
+
+    function loadSpaceList(){
+        $.ajax({
+            url: '/api/userSpace/list',
+            method: 'GET',
+            success: function (data) {
+                let listArea = $("#space_list");
+                listArea.empty();
+
+                if(!data || data.length === 0){
+                    listArea.html("<p style='color:#777; padding:10px;'>참여 중인 스페이스가 없습니다.</p>");
+                    return;
+                }
+
+                $.each(data, function(index, us){
+                    // DTO 필드 확인: groupName, workName, spaceCode, role
+                    let groupName = us.groupName ? us.groupName : "그룹없음";
+                    let workName = us.workName ? us.workName : "이름없음";
+                    let spaceCode = us.spaceCode ? us.spaceCode : "-";
+                    let role = us.role;
+
+                    let cardHtml = `
+                        <div class="space-card">
+                            <div class="card-top">${groupName} ${workName}</div>
+                            <div class="card-middle">${spaceCode}</div>
+                            <div class="card-bottom">
+                                <span class="role-badge">${role}</span>
+                                <button class="btn-invite" onclick="requestInvite(${us.spaceId})">초대</button>
+                            </div>
+                        </div>
+                    `;
+                    listArea.append(cardHtml);
+                });
+            },
+            error: function (err) {
+                if(err.status === 401 || err.status === 403){
+                    alert("로그인이 필요합니다.");
+                    location.href = "/user/login";
+                } else {
+                    alert("목록을 불러오지 못했습니다.");
+                }
+            }
+        });
+    }
+
+    function requestInvite(spaceId) {
+        let email = prompt("초대할 이메일 입력:");
+        if (!email) return;
+
+        $.ajax({
+            url: '/api/userSpace/invite',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ spaceId: spaceId, email: email.trim() }),
+            success: function() { alert("초대 완료!"); loadSpaceList(); },
+            error: function(err) { alert(err.responseText || "초대 실패"); }
+        });
+    }
+</script>
+</body>
+</html>
