@@ -28,7 +28,7 @@ public class PermissiondetailServiceImpl implements PermissiondetailService {
 
         Permissiondetail permissiondetail = permissiondetailRepository.findByPermissionIdAndTargetAndFunc(param.getPermissionId(), param.getTarget(), param.getFunc());
 
-        if(permissiondetail != null) {
+        if(permissiondetail == null) {
             create(PermissiondetailDto.CreateReqDto.builder()
                     .permissionId(param.getPermissionId())
                     .target(param.getTarget())

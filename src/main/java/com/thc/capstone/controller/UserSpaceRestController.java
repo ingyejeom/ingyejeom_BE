@@ -6,6 +6,7 @@ import com.thc.capstone.security.PrincipalDetails;
 import com.thc.capstone.service.UserSpaceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -47,6 +48,7 @@ public class UserSpaceRestController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasRole('USER')")
     @DeleteMapping("")
     public ResponseEntity<Void> delete(@RequestBody UserSpaceDto.UpdateReqDto param) {
         userSpaceService.delete(param);
@@ -54,11 +56,13 @@ public class UserSpaceRestController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("")
     public ResponseEntity<UserSpaceDto.DetailResDto> detail(DefaultDto.DetailReqDto param) {
         return ResponseEntity.ok(userSpaceService.detail(param));
     }
 
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/list")
     public ResponseEntity<List<UserSpaceDto.DetailResDto>> list(UserSpaceDto.ListReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         return ResponseEntity.ok(userSpaceService.list(param, getUserId(principalDetails)));

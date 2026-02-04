@@ -25,14 +25,14 @@ public class GroupServiceImpl implements GroupService {
 
     @Override
     public DefaultDto.CreateResDto create(GroupDto.CreateReqDto param, Long reqUserId) {
-        // permittedService.check(target, 110, reqUserId);
+        permittedService.check(target, 110, reqUserId);
 
         return groupRepository.save(param.toEntity()).toCreateResDto();
     }
 
     @Override
     public void update(GroupDto.UpdateReqDto param, Long reqUserId) {
-        // permittedService.check(target, 120, reqUserId);
+        permittedService.check(target, 120, reqUserId);
 
         Group group = groupRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("데이터가 없습니다"));
@@ -50,7 +50,7 @@ public class GroupServiceImpl implements GroupService {
     }
 
     public GroupDto.DetailResDto get(DefaultDto.DetailReqDto param, Long reqUserId) {
-        // permittedService.check(target, 200, reqUserId);
+        permittedService.check(target, 200, reqUserId);
 
         GroupDto.DetailResDto res = groupMapper.detail(param.getId());
 

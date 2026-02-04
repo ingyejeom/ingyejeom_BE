@@ -26,13 +26,13 @@ public class UserRestController {
         return null;
     }
 
-//    @PreAuthorize("permitAll()")
+    @PreAuthorize("permitAll()")
     @PostMapping("")
     public ResponseEntity<DefaultDto.CreateResDto> create(@RequestBody UserDto.CreateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         return ResponseEntity.ok(userService.create(param, getUserId(principalDetails)));
     }
 
-//    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     @PutMapping("")
     public ResponseEntity<Void> update(@RequestBody UserDto.UpdateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         userService.update(param, getUserId(principalDetails));
@@ -40,7 +40,7 @@ public class UserRestController {
         return ResponseEntity.ok().build();
     }
 
-//    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     @DeleteMapping("")
     public ResponseEntity<Void> delete(@RequestBody UserDto.UpdateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         userService.delete(param, getUserId(principalDetails));
@@ -48,13 +48,13 @@ public class UserRestController {
         return ResponseEntity.ok().build();
     }
 
-//    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("")
     public ResponseEntity<UserDto.DetailResDto> detail(DefaultDto.DetailReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         return ResponseEntity.ok(userService.detail(param, getUserId(principalDetails)));
     }
 
-//    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/list")
     public ResponseEntity<List<UserDto.DetailResDto>> list(UserDto.ListReqDto param) {
         return ResponseEntity.ok(userService.list(param));

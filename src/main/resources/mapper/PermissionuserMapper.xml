@@ -13,7 +13,6 @@
              , permissionuser.user_id as userId
 
              , user.username as userUsername
-             , user.nick as userNick
         FROM permissionuser, user
         WHERE permissionuser.id = ${id}
           AND permissionuser.user_id = user.id

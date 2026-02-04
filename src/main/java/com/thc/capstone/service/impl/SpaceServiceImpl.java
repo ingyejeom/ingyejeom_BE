@@ -49,7 +49,7 @@ public class SpaceServiceImpl implements SpaceService {
     @Override
     @Transactional
     public void create(SpaceDto.MultiCreateReqDto param, Long reqUserId) {
-        // permittedService.check(target, 110, reqUserId);
+        permittedService.check(target, 110, reqUserId);
 
         try {
             User user = userRepository.findById(reqUserId)
@@ -100,7 +100,7 @@ public class SpaceServiceImpl implements SpaceService {
 
     @Override
     public void update(SpaceDto.UpdateReqDto param, Long reqUserId) {
-        // permittedService.check(target, 120, reqUserId);
+        permittedService.check(target, 120, reqUserId);
 
         Space space = spaceRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("데이터가 없습니다"));
@@ -118,7 +118,7 @@ public class SpaceServiceImpl implements SpaceService {
     }
 
     public SpaceDto.DetailResDto get(DefaultDto.DetailReqDto param, Long reqUserId) {
-        // permittedService.check(target, 200, reqUserId);
+        permittedService.check(target, 200, reqUserId);
 
         SpaceDto.DetailResDto res = spaceMapper.detail(param.getId());
 

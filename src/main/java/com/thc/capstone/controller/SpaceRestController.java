@@ -30,14 +30,14 @@ public class SpaceRestController {
      * Request : groupName, workNames (List)
      * 하나의 그룹과 여러 개의 스페이스를 한 번에 생성합니다.
      */
-//    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     @PostMapping("")
     public ResponseEntity<Void> create(@RequestBody SpaceDto.MultiCreateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         spaceService.create(param, getUserId(principalDetails));
         return ResponseEntity.ok().build();
     }
 
-//    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     @PutMapping("")
     public ResponseEntity<Void> update(@RequestBody SpaceDto.UpdateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         spaceService.update(param, getUserId(principalDetails));
@@ -45,7 +45,7 @@ public class SpaceRestController {
         return ResponseEntity.ok().build();
     }
 
-//    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     @DeleteMapping("")
     public ResponseEntity<Void> delete(@RequestBody SpaceDto.UpdateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         spaceService.delete(param, getUserId(principalDetails));
@@ -53,13 +53,13 @@ public class SpaceRestController {
         return ResponseEntity.ok().build();
     }
 
-//    @PreAuthorize("permitAll()")
+    @PreAuthorize("permitAll()")
     @GetMapping("")
     public ResponseEntity<SpaceDto.DetailResDto> detail(DefaultDto.DetailReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         return ResponseEntity.ok(spaceService.detail(param, getUserId(principalDetails)));
     }
 
-//    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/list")
     public ResponseEntity<List<SpaceDto.DetailResDto>> list(SpaceDto.ListReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         return ResponseEntity.ok(spaceService.list(param, getUserId(principalDetails)));
