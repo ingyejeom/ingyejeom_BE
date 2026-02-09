@@ -120,12 +120,14 @@
                 $.each(data, function(index, item){
                     let groupName = item.groupName || "그룹없음";
                     let workName = item.workName || "업무없음";
+                    let spaceCode = item.spaceCode || "코드없음";
                     let createdAt = item.createdAt ? item.createdAt.split('T')[0] : "-";
 
                     let html = `
                         <div class="space-item">
                             <div class="info-box">
                                 <div class="txt-title">${groupName} ${workName}</div>
+                                <div class="txt-sub">${spaceCode}</div>
                                 <div class="txt-sub">생성일: ${createdAt}</div>
                             </div>
                             <div class="btn-area">
