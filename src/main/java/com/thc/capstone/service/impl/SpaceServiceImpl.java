@@ -155,10 +155,12 @@ public class SpaceServiceImpl implements SpaceService {
     }
 
     public SpaceDto.DetailResDto get(DefaultDto.DetailReqDto param, Long reqUserId) {
-        permittedService.check(target, 200, reqUserId);
-
         SpaceDto.DetailResDto res = spaceMapper.detail(param.getId());
-
+        UserSpace userSpace = userSpaceRepository.findByUserIdAndSpaceId(reqUserId, res.getId()).orElse(null);
+        if(userSpace == null || userSpace.getStatus() != UserSpaceStatus.ACTIVE || userSpace.getDeleted()) {
+            //접근권한이 없는데?
+            permittedService.check(target, 200, reqUserId);
+        }
         return res;
     }
 
