@@ -46,6 +46,8 @@ public class SpaceDto {
     public static class DetailResDto extends DefaultDto.DetailResDto {
         String workName;
         String spaceCode;
+
+        String groupName;
     }
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder

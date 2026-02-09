@@ -26,6 +26,13 @@ public class SpaceRestController {
         return null;
     }
 
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/add")
+    public ResponseEntity<Void> add(@RequestBody SpaceDto.CreateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        spaceService.add(param, getUserId(principalDetails));
+        return ResponseEntity.ok().build();
+    }
+
     /**
      * Request : groupName, workNames (List)
      * 하나의 그룹과 여러 개의 스페이스를 한 번에 생성합니다.

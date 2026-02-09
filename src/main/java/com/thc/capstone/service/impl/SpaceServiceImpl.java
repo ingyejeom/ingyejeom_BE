@@ -40,6 +40,43 @@ public class SpaceServiceImpl implements SpaceService {
     private final SecureRandom random = new SecureRandom();
 
     /**
+     * 그룹 관리 페이지에서 이미 만들어진 그룹 내에 스페이스를 하나만 추가할 경우
+     * groupId, spaceName으로 새로운 space를 생성합니다.
+     */
+    @Override
+    @Transactional
+    public void add(SpaceDto.CreateReqDto param, Long reqUserId) {
+        permittedService.check(target, 110, reqUserId);
+
+        try{
+            User user = userRepository.findById(reqUserId)
+                    .orElseThrow(() -> new RuntimeException("유저 없음"));
+
+            Group group = groupRepository.findById(param.getGroupId())
+                    .orElseThrow(() -> new RuntimeException("존재하지 않는 그룹"));
+
+            String uniqueSpaceCode;
+            do {
+                uniqueSpaceCode = generateRandomCode();
+            } while (spaceRepository.existsBySpaceCode(uniqueSpaceCode));
+
+             Space space = Space.of(param.getWorkName(), uniqueSpaceCode, group.getId());
+             spaceRepository.save(space);
+
+            UserSpace userSpace = UserSpace.of(
+                    Role.ADMIN,
+                    UserSpaceStatus.ACTIVE,
+                    user.getId(),
+                    space.getId()
+            );
+            userSpaceRepository.save(userSpace);
+        } catch (Exception e) {
+            log.error("스페이스 추가 실패 : {}", e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * Space를 생성할 때,
      * 요청을 한 사람의 ID와 생성된 Space ID를 통해 UserSpace를 생성합니다
      * Default : "ADMIN", "ACTIVE"

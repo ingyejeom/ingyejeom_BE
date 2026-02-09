@@ -1,12 +1,17 @@
 package com.thc.capstone.service.impl;
 
 import com.thc.capstone.domain.Group;
+import com.thc.capstone.domain.Space;
 import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.GroupDto;
+import com.thc.capstone.dto.SpaceDto;
 import com.thc.capstone.mapper.GroupMapper;
 import com.thc.capstone.repository.GroupRepository;
+import com.thc.capstone.repository.SpaceRepository;
 import com.thc.capstone.service.GroupService;
 import com.thc.capstone.service.PermittedService;
+import com.thc.capstone.service.SpaceService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +25,10 @@ public class GroupServiceImpl implements GroupService {
     final GroupRepository groupRepository;
     final GroupMapper groupMapper;
     final PermittedService permittedService;
+
+    // 그룹 삭제시 스페이스들도 연쇄 삭제를 위함
+    final SpaceService spaceService;
+    final SpaceRepository spaceRepository;
 
     String target = "group";
 
@@ -42,7 +51,21 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
+    @Transactional
     public void delete(GroupDto.UpdateReqDto param, Long reqUserId) {
+        Group group = groupRepository.findById(param.getId())
+                        .orElseThrow(() -> new RuntimeException("존재하지 않는 그룹"));
+
+        List<Space> spaces = spaceRepository.findByGroupId(group.getId());
+
+        for(Space space : spaces) {
+            SpaceDto.UpdateReqDto spaceDelete = SpaceDto.UpdateReqDto.builder()
+                    .id(space.getId())
+                    .build();
+
+            spaceService.delete(spaceDelete, reqUserId);
+        }
+
         update(GroupDto.UpdateReqDto.builder()
                 .id(param.getId())
                 .deleted(true)

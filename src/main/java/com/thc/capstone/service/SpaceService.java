@@ -8,6 +8,8 @@ import java.util.List;
 
 @Service
 public interface SpaceService {
+    void add (SpaceDto.CreateReqDto param, Long reqUserId);
+
     void create(SpaceDto.MultiCreateReqDto param, Long reqUserId);
 
     void update(SpaceDto.UpdateReqDto param, Long reqUserId);
