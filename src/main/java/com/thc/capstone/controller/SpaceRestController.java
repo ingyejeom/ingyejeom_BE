@@ -27,21 +27,9 @@ public class SpaceRestController {
     }
 
     @PreAuthorize("hasRole('USER')")
-    @PostMapping("/add")
-    public ResponseEntity<Void> add(@RequestBody SpaceDto.CreateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
-        spaceService.add(param, getUserId(principalDetails));
-        return ResponseEntity.ok().build();
-    }
-
-    /**
-     * Request : groupName, workNames (List)
-     * 하나의 그룹과 여러 개의 스페이스를 한 번에 생성합니다.
-     */
-    @PreAuthorize("hasRole('USER')")
     @PostMapping("")
-    public ResponseEntity<Void> create(@RequestBody SpaceDto.MultiCreateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
-        spaceService.create(param, getUserId(principalDetails));
-        return ResponseEntity.ok().build();
+    public ResponseEntity<DefaultDto.CreateResDto> create(@RequestBody SpaceDto.CreateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        return ResponseEntity.ok(spaceService.create(param, getUserId(principalDetails)));
     }
 
     @PreAuthorize("hasRole('USER')")

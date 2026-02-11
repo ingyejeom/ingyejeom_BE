@@ -147,25 +147,30 @@
 
     // [추가] 2. 업무 추가 기능
     function addWork() {
+        // 1단계: 업무명 입력
         let workName = prompt("추가할 업무명을 입력하세요:");
         if (!workName || workName.trim() === "") return;
 
+        // 2단계: 이메일 입력 (선택사항)
+        let userEmail = prompt("담당자 이메일을 입력하세요 (선택):");
+
         let _data = {
-            groupId: groupId, // 현재 페이지의 그룹 ID 사용
-            workName: workName.trim()
+            groupId: groupId,
+            workName: workName.trim(),
+            // ▼▼▼ 이메일 데이터 추가 (입력 안 했으면 빈 문자열)
+            userEmail: userEmail ? userEmail.trim() : ""
         };
 
         $.ajax({
-            url: '/api/space/add', // 새로 만든 Controller API 호출
+            url: '/api/space',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(_data),
             success: function() {
                 alert("업무가 추가되었습니다.");
-                loadGroupSpaces(); // 목록 새로고침
+                loadGroupSpaces();
             },
             error: function(err) {
-                // 에러 메시지 상세 출력
                 let msg = "업무 추가에 실패했습니다.";
                 if(err.responseJSON && err.responseJSON.message) msg = err.responseJSON.message;
                 alert(msg);

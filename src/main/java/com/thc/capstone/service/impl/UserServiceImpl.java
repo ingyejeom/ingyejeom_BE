@@ -2,9 +2,11 @@ package com.thc.capstone.service.impl;
 
 import com.thc.capstone.domain.User;
 import com.thc.capstone.dto.DefaultDto;
+import com.thc.capstone.dto.PermissionuserDto;
 import com.thc.capstone.dto.UserDto;
 import com.thc.capstone.mapper.UserMapper;
 import com.thc.capstone.repository.UserRepository;
+import com.thc.capstone.service.PermissionuserService;
 import com.thc.capstone.service.PermittedService;
 import com.thc.capstone.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ public class UserServiceImpl implements UserService {
     final UserMapper userMapper;
     final BCryptPasswordEncoder bCryptPasswordEncoder;
     final PermittedService permittedService;
+    final PermissionuserService permissionuserService;
 
     String target = "user";
 
@@ -39,6 +42,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void update(UserDto.UpdateReqDto param, Long reqUserId) {
+        if(param.getId() == 0){
+            param.setId(reqUserId);
+        }
+        if(!param.getId().equals(reqUserId)){
+            permittedService.isPermitted(target, 120, reqUserId);
+        }
+
         User user = userRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("데이터가 없습니다"));
 
