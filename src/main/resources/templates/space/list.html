@@ -112,6 +112,7 @@
                         <div class="space-card">
                             <div class="card-top">${groupName} ${workName}</div>
                             <div class="card-bottom">
+                                <button class="btn-enter" onclick="goFileDetail(${us.spaceId})">파일</button>
                                 <button class="btn-enter" onclick="goSpaceDetail(${us.spaceId})">입장</button>
                                 <button class="btn-invite" onclick="requestInvite(${us.spaceId})">초대</button>
                             </div>
@@ -133,6 +134,10 @@
 
     function goSpaceDetail(spaceId) {
         location.href = '/space/detail/' + spaceId;
+    }
+
+    function goFileDetail(spaceId) {
+        location.href = '/space/fileList/' + spaceId;
     }
 
     function requestInvite(spaceId) {

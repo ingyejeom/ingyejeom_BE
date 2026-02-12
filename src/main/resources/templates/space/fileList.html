@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>파일 관리</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f8f9fc; padding: 40px; margin: 0; }
+
+        /* 헤더 영역 */
+        .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .page-title { font-size: 24px; font-weight: bold; color: #5a5c69; }
+
+        .btn-back { text-decoration: none; color: #858796; font-size: 14px; padding: 8px 16px; border: 1px solid #d1d3e2; border-radius: 4px; background: white; }
+        .btn-back:hover { background-color: #eaecf4; }
+
+        /* 파일 추가 버튼 */
+        .btn-upload {
+            background-color: white; border: 1px solid #4e73df; color: #4e73df;
+            padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;
+            transition: all 0.2s;
+        }
+        .btn-upload:hover { background-color: #4e73df; color: white; }
+
+        /* 그리드 레이아웃 */
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* 반응형 그리드 */
+            gap: 20px;
+        }
+
+        /* 파일 카드 스타일 */
+        .file-card {
+            background: white; border: 1px solid #e3e6f0; border-radius: 8px;
+            height: 200px; position: relative; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+
+        /* 파일 아이콘 (단순 사각형) */
+        .file-icon {
+            width: 60px; height: 80px; background-color: #f1f3f5; border: 2px solid #ced4da;
+            margin-bottom: 15px; border-radius: 4px;
+        }
+
+        .file-name { font-size: 14px; color: #333; padding: 0 10px; text-align: center; word-break: break-all; }
+        .uploader-name { font-size: 12px; color: #aaa; margin-top: 5px; }
+
+        /* ★ 핵심: 호버 오버레이 효과 ★ */
+        .hover-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); /* 반투명 검정 배경 */
+            display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;
+            opacity: 0; transition: opacity 0.3s ease; /* 부드럽게 나타나기 */
+        }
+
+        /* 마우스를 올렸을 때 오버레이 표시 */
+        .file-card:hover .hover-overlay { opacity: 1; }
+
+        /* 오버레이 내부 버튼들 */
+        .btn-action {
+            width: 100px; padding: 8px 0; border: none; border-radius: 20px;
+            font-size: 13px; cursor: pointer; font-weight: bold; text-decoration: none;
+            text-align: center; display: block;
+        }
+        .btn-view { background-color: #36b9cc; color: white; }     /* 청록색 */
+        .btn-down { background-color: #f6c23e; color: white; }     /* 노란색 */
+        .btn-del  { background-color: #e74a3b; color: white; }     /* 빨간색 */
+
+        .btn-view:hover { background-color: #2c9faf; }
+        .btn-down:hover { background-color: #dfa528; }
+        .btn-del:hover  { background-color: #be2617; }
+
+    </style>
+</head>
+<body>
+
+<div class="header-area">
+    <div>
+        <a href="/space/list" class="btn-back">← 목록으로</a>
+        <span class="page-title" style="margin-left: 15px;">파일 보관함</span>
+    </div>
+
+    <div>
+        <button class="btn-upload" onclick="$('#fileInput').click()">+ 파일 추가</button>
+        <input type="file" id="fileInput" style="display: none;" onchange="uploadFile()">
+    </div>
+</div>
+
+<div id="file_list_area" class="file-grid">
+</div>
+
+<script>
+    // URL에서 spaceId 추출 (/space/files/10 -> 10)
+    const pathParts = location.pathname.split('/');
+    const spaceId = pathParts[pathParts.length - 1];
+
+    $(document).ready(function(){
+        // 토큰 설정
+        let accessToken = localStorage.getItem("accessToken");
+        if(accessToken){
+            $.ajaxSetup({
+                beforeSend: function(xhr){
+                    if (!accessToken.startsWith("Bearer ")) accessToken = "Bearer " + accessToken;
+                    xhr.setRequestHeader("Authorization", accessToken);
+                }
+            });
+        }
+
+        loadFiles();
+    });
+
+    // 1. 파일 목록 불러오기
+    function loadFiles(){
+        $.ajax({
+            url: '/api/file/list',
+            method: 'GET',
+            data: { spaceId: spaceId },
+            success: function(data){
+                let area = $("#file_list_area");
+                area.empty();
+
+                if(!data || data.length === 0){
+                    area.html("<div style='grid-column: 1/-1; text-align: center; color: #888;'>등록된 파일이 없습니다.</div>");
+                    return;
+                }
+
+                $.each(data, function(idx, file){
+                    // 원본 파일명
+                    let fileName = file.originalFileName;
+                    // 확장자에 따라 아이콘 색상 다르게 하거나 이미지는 썸네일 보여주는 로직 추가 가능
+                    // 여기서는 심플하게 텍스트 아이콘으로 처리
+
+                    let html = `
+                        <div class="file-card">
+                            <div class="file-icon"></div>
+                            <div class="file-name">${fileName}</div>
+                            <div class="uploader-name">by ${file.uploaderName}</div>
+
+                            <div class="hover-overlay">
+                                <a href="/space/fileViewer?id=${file.id}" target="_blank" class="btn-action btn-view">미리보기</a>
+
+                                <a href="/api/file/${file.id}?mode=download" class="btn-action btn-down">다운로드</a>
+
+                                <button onclick="deleteFile(${file.id})" class="btn-action btn-del">삭제</button>
+                            </div>
+                        </div>
+                    `;
+                    area.append(html);
+                });
+            },
+            error: function(err){
+                alert("파일 목록 로드 실패");
+            }
+        });
+    }
+
+    // 2. 파일 업로드
+    function uploadFile(){
+        let fileInput = $("#fileInput")[0];
+        if(fileInput.files.length === 0) return;
+
+        let formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+        formData.append("spaceId", spaceId); // 스페이스 ID 전송
+
+        $.ajax({
+            url: '/api/file',
+            method: 'POST',
+            data: formData,
+            contentType: false, // 필수: multipart/form-data 처리를 위해 false
+            processData: false, // 필수: query string 변환 방지
+            success: function(){
+                alert("파일이 업로드되었습니다.");
+                loadFiles(); // 목록 새로고침
+                $("#fileInput").val(""); // 입력창 초기화
+            },
+            error: function(err){
+                alert("업로드 실패: " + (err.responseText || "오류 발생"));
+                $("#fileInput").val("");
+            }
+        });
+    }
+
+    // 3. 파일 삭제
+    function deleteFile(fileId){
+        if(!confirm("정말 이 파일을 삭제하시겠습니까?")) return;
+
+        $.ajax({
+            url: '/api/file',
+            method: 'DELETE',
+            contentType: 'application/json',
+            data: JSON.stringify({ id: fileId }), // FileDto.UpdateReqDto 매핑
+            success: function(){
+                alert("삭제되었습니다.");
+                loadFiles();
+            },
+            error: function(err){
+                alert("삭제 실패: 권한이 없거나 오류가 발생했습니다.");
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
