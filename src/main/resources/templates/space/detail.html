@@ -1,30 +1,134 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>스페이스 상세</title>
+    <meta charset="UTF-8" />
+    <title>스페이스 상세 - 챗봇</title>
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
 
     <style>
-        body { background-color: #f8f9fc; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .detail-container { text-align: center; background: white; padding: 60px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 600px; }
+        body { background-color: #f8f9fc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 24px; }
+        .detail-container { text-align: center; background: white; padding: 50px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 720px; max-width: 92vw; }
 
-        .title-area { margin-bottom: 50px; }
+        .title-area { margin-bottom: 28px; }
         .group-name { font-size: 20px; color: #888; margin-bottom: 10px; }
         .work-name { font-size: 36px; font-weight: bold; color: #333; }
 
-        .button-area { display: flex; justify-content: center; gap: 20px; }
-        .btn-action { padding: 12px 24px; font-size: 16px; border: 1px solid #ccc; background: white; cursor: pointer; border-radius: 5px; transition: all 0.2s; }
+        .button-area { display: flex; justify-content: center; gap: 14px; margin-top: 18px; }
+        .btn-action { padding: 12px 18px; font-size: 15px; border: 1px solid #ccc; background: white; cursor: pointer; border-radius: 5px; transition: all 0.2s; }
         .btn-action:hover { background: #f1f1f1; }
         .btn-delete { color: #e74a3b; border-color: #e74a3b; }
         .btn-delete:hover { background: #e74a3b; color: white; }
 
         .back-link { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #666; font-size: 14px; }
+
+        /* Chat UI (space.html 톤 유지: 심플 + 카드 내부) */
+        .chat-area {
+            margin-top: 30px;
+            text-align: left;
+            border: 1px solid #eee;
+            border-radius: 10px;
+            background: #fbfbfd;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 14px 16px;
+            background: #ffffff;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title {
+            font-weight: 700;
+            color: #333;
+            font-size: 15px;
+        }
+
+        .chat-hint {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .chat-log {
+            height: 320px;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .msg-row { display: flex; margin-bottom: 10px; }
+        .msg-row.user { justify-content: flex-end; }
+        .msg-row.bot { justify-content: flex-start; }
+
+        .msg {
+            max-width: 78%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            line-height: 1.45;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        .msg.user {
+            background: #ffffff;
+            border: 1px solid #e8e8e8;
+            color: #333;
+        }
+
+        .msg.bot {
+            background: #f1f3f7;
+            border: 1px solid #e6e8ef;
+            color: #333;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+            padding: 14px 16px;
+            border-top: 1px solid #eee;
+            background: #ffffff;
+        }
+
+        .chat-input textarea {
+            flex: 1;
+            resize: none;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 14px;
+            outline: none;
+            height: 44px;
+        }
+
+        .chat-input textarea:focus {
+            border-color: #b7c0d6;
+            box-shadow: 0 0 0 2px rgba(78,115,223,0.08);
+        }
+
+        .btn-send {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #cfd6ea;
+            background: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            min-width: 88px;
+        }
+
+        .btn-send:hover { background: #f1f1f1; }
+        .btn-send:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
     </style>
 </head>
-<body>
 
+<body>
 <a href="/space/list" class="back-link">← 목록으로 돌아가기</a>
 
 <div class="detail-container">
@@ -33,6 +137,26 @@
         <div id="text_work_name" class="work-name">로딩중...</div>
     </div>
 
+    <!-- ✅ Chatbot UI -->
+    <div class="chat-area">
+        <div class="chat-header">
+            <div class="chat-title">챗봇</div>
+            <div class="chat-hint">Enter로 전송 · Shift+Enter 줄바꿈</div>
+        </div>
+
+        <div id="chatLog" class="chat-log">
+            <div class="msg-row bot">
+                <div class="msg bot">안녕하세요! 이 스페이스 자료 기준으로 질문해보세요.</div>
+            </div>
+        </div>
+
+        <div class="chat-input">
+            <textarea id="questionInput" placeholder="질문을 입력하세요..."></textarea>
+            <button id="sendBtn" class="btn-send" onclick="sendQuestion()">전송</button>
+        </div>
+    </div>
+
+    <!-- 기존 버튼 유지 -->
     <div class="button-area">
         <button class="btn-action" onclick="updateWorkName()">업무명 수정</button>
         <button class="btn-action btn-delete" onclick="deleteSpace()">스페이스 삭제</button>
@@ -44,12 +168,12 @@
     const pathParts = location.pathname.split('/');
     const spaceId = pathParts[pathParts.length - 1];
 
-    $(document).ready(function(){
+    $(document).ready(function () {
         // 토큰 설정
         let accessToken = localStorage.getItem("accessToken");
-        if(accessToken){
+        if (accessToken) {
             $.ajaxSetup({
-                beforeSend: function(xhr){
+                beforeSend: function (xhr) {
                     if (!accessToken.startsWith("Bearer ")) accessToken = "Bearer " + accessToken;
                     xhr.setRequestHeader("Authorization", accessToken);
                 }
@@ -57,6 +181,14 @@
         }
 
         loadSpaceDetail();
+
+        // Enter 전송 / Shift+Enter 줄바꿈
+        $("#questionInput").on("keydown", function (e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendQuestion();
+            }
+        });
     });
 
     function loadSpaceDetail() {
@@ -64,14 +196,67 @@
             url: '/api/space',
             method: 'GET',
             data: { id: spaceId },
-            success: function(data) {
-                // data.groupName과 data.workName 표시
+            success: function (data) {
                 $("#text_group_name").text(data.groupName ? data.groupName : "그룹없음");
                 $("#text_work_name").text(data.workName);
             },
-            error: function(err) {
+            error: function () {
                 alert("스페이스 정보를 불러오지 못했습니다.");
                 location.href = "/space/list";
+            }
+        });
+    }
+
+    function appendMessage(role, text) {
+        const rowClass = role === "user" ? "user" : "bot";
+        const msgClass = role === "user" ? "user" : "bot";
+
+        const $row = $(`<div class="msg-row ${rowClass}"></div>`);
+        const $msg = $(`<div class="msg ${msgClass}"></div>`);
+        $msg.text(text);
+
+        $row.append($msg);
+        $("#chatLog").append($row);
+
+        // 스크롤 맨 아래
+        const el = document.getElementById("chatLog");
+        el.scrollTop = el.scrollHeight;
+    }
+
+    function setSending(isSending) {
+        $("#sendBtn").prop("disabled", isSending);
+        $("#questionInput").prop("disabled", isSending);
+    }
+
+    // ✅ 질문 보내기: /api/chatbot (Spring) -> Python 연동은 서버에서 처리
+    function sendQuestion() {
+        const q = $("#questionInput").val().trim();
+        if (!q) return;
+
+        appendMessage("user", q);
+        $("#questionInput").val("");
+        setSending(true);
+
+        $.ajax({
+            url: "/api/chatbot",
+            method: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({
+                question: q
+                // MVP에서는 spaceId를 안 보내도 되지만,
+                // 나중에 필터링 필요하면 서버에서 받도록 추가 가능:
+                // spaceId: spaceId
+            }),
+            success: function (data) {
+                // data.answer 기대
+                appendMessage("bot", data.answer ?? "(답변이 비어있습니다)");
+            },
+            error: function (xhr) {
+                appendMessage("bot", "오류가 발생했습니다. 서버 상태를 확인해주세요.");
+            },
+            complete: function () {
+                setSending(false);
+                $("#questionInput").focus();
             }
         });
     }
@@ -92,11 +277,11 @@
                 id: spaceId,
                 workName: newName.trim()
             }),
-            success: function() {
+            success: function () {
                 alert("수정되었습니다.");
-                loadSpaceDetail(); // 화면 갱신
+                loadSpaceDetail();
             },
-            error: function(err) {
+            error: function () {
                 alert("수정에 실패했습니다. (권한이 없거나 오류 발생)");
             }
         });
@@ -104,25 +289,22 @@
 
     // 2. 스페이스 삭제
     function deleteSpace() {
-        if (!confirm("정말 이 스페이스를 삭제하시겠습니까?\n삭제 후에는 복구할 수 없습니다.")) {
-            return;
-        }
+        if (!confirm("정말 이 스페이스를 삭제하시겠습니까?\n삭제 후에는 복구할 수 없습니다.")) return;
 
         $.ajax({
             url: '/api/space',
             method: 'DELETE',
             contentType: 'application/json',
             data: JSON.stringify({ id: spaceId }),
-            success: function() {
+            success: function () {
                 alert("삭제되었습니다.");
                 location.href = "/space/list";
             },
-            error: function(err) {
+            error: function () {
                 alert("삭제에 실패했습니다. (권한이 없거나 오류 발생)");
             }
         });
     }
 </script>
-
 </body>
 </html>
