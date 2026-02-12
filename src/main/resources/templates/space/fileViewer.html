@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>파일 미리보기</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background-color: #222; height: 100vh; display: flex; flex-direction: column; }
+
+        /* 상단 헤더 */
+        .viewer-header {
+            height: 60px; background-color: #333; color: white; display: flex;
+            justify-content: space-between; align-items: center; padding: 0 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 10;
+        }
+        .file-title { font-size: 18px; font-weight: bold; }
+        .btn-download {
+            background-color: #4e73df; color: white; border: none; padding: 8px 15px;
+            border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 14px;
+        }
+
+        /* 컨텐츠 영역 */
+        .viewer-body { flex: 1; display: flex; justify-content: center; align-items: center; overflow: auto; padding: 20px; }
+
+        /* 이미지: 화면 맞춤 */
+        img.content { max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+
+        /* PDF: 전체 화면 */
+        iframe.content { width: 90%; height: 100%; border: none; background: white; }
+
+        /* 텍스트 박스 */
+        .text-box {
+            background: white; padding: 40px; width: 80%; max-width: 800px; height: 80%;
+            overflow: auto; font-family: 'Consolas', monospace; white-space: pre-wrap;
+            line-height: 1.6; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div class="viewer-header">
+    <div id="file_name" class="file-title">로딩 중...</div>
+    <button id="download_btn" class="btn-download">다운로드</button> </div>
+
+<div class="viewer-body" id="content_area">
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const fileId = urlParams.get('id');
+
+    // 전역 변수로 blobUrl 관리 (메모리 누수 방지용)
+    let currentBlobUrl = null;
+
+    $(document).ready(function(){
+        if(!fileId) { alert("잘못된 접근입니다."); window.close(); return; }
+        loadFile();
+    });
+
+    // [핵심] 인증 토큰을 헤더에 담아 파일을 가져오는 함수
+    function loadFile(){
+        const viewUrl = `/api/file/${fileId}?mode=view`;
+
+        let accessToken = localStorage.getItem("accessToken");
+        let headers = {};
+        if(accessToken) {
+            if (!accessToken.startsWith("Bearer ")) accessToken = "Bearer " + accessToken;
+            headers["Authorization"] = accessToken;
+        }
+
+        // fetch를 사용해 헤더와 함께 요청
+        fetch(viewUrl, { method: 'GET', headers: headers })
+            .then(response => {
+                if(!response.ok) throw new Error("파일 로드 실패");
+
+                // 파일명 추출
+                const disposition = response.headers.get('Content-Disposition');
+                let filename = "파일 미리보기";
+                if (disposition && disposition.indexOf('filename=') !== -1) {
+                    filename = decodeURIComponent(disposition.split('filename=')[1].replace(/"/g, ''));
+                }
+                $("#file_name").text(filename);
+
+                // Content-Type 추출
+                const contentType = response.headers.get('Content-Type');
+
+                // 데이터를 Blob(파일 객체)으로 변환
+                return response.blob().then(blob => {
+                    return { blob, contentType, filename };
+                });
+            })
+            .then(({ blob, contentType, filename }) => {
+                // 다운로드 버튼 기능 연결
+                setupDownloadButton(blob, filename);
+
+                // 화면에 그리기
+                renderContent(blob, contentType, filename);
+            })
+            .catch(err => {
+                console.error(err);
+                $("#file_name").text("파일을 불러올 수 없습니다.");
+                if(err.message.includes("403") || err.message.includes("401")){
+                    alert("권한이 없거나 로그인이 필요합니다.");
+                    window.close();
+                }
+            });
+    }
+
+    // Blob 데이터를 화면에 표시하는 함수
+    function renderContent(blob, type, filename) {
+        let area = $("#content_area");
+        area.empty();
+
+        // Blob을 가리키는 임시 URL 생성 (예: blob:http://localhost/...)
+        if(currentBlobUrl) URL.revokeObjectURL(currentBlobUrl); // 기존 URL 해제
+        currentBlobUrl = URL.createObjectURL(blob);
+
+        let ext = filename.split('.').pop().toLowerCase();
+
+        if (type.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext)) {
+            // [이미지] src에 blobUrl을 넣으면 인증 없이도 보임 (이미 브라우저 메모리에 있으니까)
+            area.html(`<img src="${currentBlobUrl}" class="content">`);
+
+        } else if (type === 'application/pdf' || ext === 'pdf') {
+            // [PDF] iframe에 blobUrl 연결
+            area.html(`<iframe src="${currentBlobUrl}" class="content"></iframe>`);
+
+        } else if (type.startsWith('text/') || ['txt', 'md', 'json', 'xml', 'java', 'js'].includes(ext)) {
+            // [텍스트] Blob을 텍스트로 읽어서 표시
+            blob.text().then(text => {
+                area.html(`<div class="text-box">${escapeHtml(text)}</div>`);
+            });
+
+        } else {
+            // [그 외]
+            area.html(`
+                <div style="color: #ccc; text-align: center;">
+                    <p style="font-size: 50px;">📁</p>
+                    <p>미리보기를 지원하지 않는 파일 형식입니다.</p>
+                </div>
+            `);
+        }
+    }
+
+    // 다운로드 버튼 설정 (a 태그 클릭 시에도 헤더가 안 실리므로, Blob을 이용해 다운로드)
+    function setupDownloadButton(blob, filename) {
+        $("#download_btn").off("click").on("click", function() {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename; // 다운로드 파일명 지정
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        });
+    }
+
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+</script>
+
+</body>
+</html>

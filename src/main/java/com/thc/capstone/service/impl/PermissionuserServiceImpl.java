@@ -2,12 +2,14 @@ package com.thc.capstone.service.impl;
 
 import com.thc.capstone.domain.Permissionuser;
 import com.thc.capstone.domain.User;
+import com.thc.capstone.domain.UserSpace;
 import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.PermissionuserDto;
 import com.thc.capstone.exception.NoMatchingDataException;
 import com.thc.capstone.mapper.PermissionuserMapper;
 import com.thc.capstone.repository.PermissionuserRepository;
 import com.thc.capstone.repository.UserRepository;
+import com.thc.capstone.repository.UserSpaceRepository;
 import com.thc.capstone.service.PermissionuserService;
 import com.thc.capstone.service.PermittedService;
 import lombok.RequiredArgsConstructor;
@@ -29,10 +31,12 @@ public class PermissionuserServiceImpl implements PermissionuserService {
 
     @Override
     public DefaultDto.CreateResDto create(PermissionuserDto.CreateReqDto param, Long reqUserId) {
-        permittedService.check(target, 110, reqUserId);
+        if (reqUserId != null) {
+            permittedService.check(target, 110, reqUserId);
+        }
 
         if(param.getUserId() == null){
-            User user = userRepository.findByUsername(param.getUsername());
+            User user = userRepository.findByUsername(param.getUserUsername());
             if(user == null){
                 throw new NoMatchingDataException("no matching data");
             } else {

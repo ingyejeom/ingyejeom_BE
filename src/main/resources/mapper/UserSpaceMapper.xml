@@ -43,4 +43,25 @@
         <if test="deleted != null">AND space.deleted = #{deleted}</if>
         <if test="groupId != null">AND space.group_id = #{groupId}</if>
     </select>
+
+<!--  Group과 Space의 Update에 대해서 권한을 체크하기 위함  -->
+
+    <select id="isGroupAdmin" parameterType="hashMap" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM user_space us
+                 JOIN space s ON us.space_id = s.id
+        WHERE us.user_id = #{userId}
+          AND s.group_id = #{groupId}
+          AND us.role = 'ADMIN'
+    </select>
+
+    <select id="isSpaceAdmin" parameterType="hashMap" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM user_space
+        WHERE user_id = #{userId}
+          AND space_id = #{spaceId}
+          AND role = 'ADMIN'
+          AND status = 'ACTIVE'
+    </select>
+
 </mapper>

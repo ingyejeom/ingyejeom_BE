@@ -9,7 +9,7 @@ public class PermissionuserDto {
     public static class CreateReqDto{
         Long permissionId;
         Long userId;
-        String username;
+        String userUsername;
 
         public Permissionuser toEntity(){
             return Permissionuser.of(getPermissionId(), getUserId());

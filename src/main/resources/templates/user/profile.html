@@ -20,6 +20,24 @@
         .profile-name { font-size: 22px; font-weight: bold; color: #5a5c69; margin-bottom: 5px; }
         .profile-email { font-size: 15px; color: #858796; margin-bottom: 30px; }
 
+        /* [추가] 로그아웃 버튼 스타일 */
+        .btn-logout {
+            background-color: white;
+            border: 1px solid #e74a3b;
+            color: #e74a3b;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 80%;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover {
+            background-color: #e74a3b;
+            color: white;
+        }
+
         /* 오른쪽 리스트 영역 */
         .list-section { flex: 1; }
         .section-header { font-size: 18px; font-weight: bold; color: #4e73df; margin-bottom: 15px; border-left: 4px solid #4e73df; padding-left: 10px; }
@@ -50,6 +68,8 @@
             <div class="profile-icon">👤</div>
             <div id="text_name" class="profile-name">-</div>
             <div id="text_email" class="profile-email">-</div>
+
+            <button class="btn-logout" onclick="logout()">로그아웃</button>
         </div>
 
         <div class="list-section">
@@ -72,7 +92,7 @@
 
 <script>
     $(document).ready(function(){
-        // 토큰 헤더 설정
+        // 1. 토큰 헤더 설정
         let accessToken = localStorage.getItem("accessToken");
         if(accessToken){
             $.ajaxSetup({
@@ -83,6 +103,7 @@
             });
         }
 
+        // 2. 데이터 로드
         loadMyProfile();
         loadMySpaces();
     });
@@ -98,11 +119,15 @@
                 let email = data.email ? data.email : "";
                 $("#text_name").text(name);
                 $("#text_email").text(email);
+            },
+            error: function(){
+                // 토큰 만료 등의 이유로 실패 시 로그인 페이지로
+                // location.href = "/user/login";
             }
         });
     }
 
-    // ★ 핵심 로직: 스페이스 목록 불러와서 ADMIN(그룹핑), USER(나열) 분리
+    // 스페이스 목록 불러와서 ADMIN(그룹핑), USER(나열) 분리
     function loadMySpaces(){
         $.ajax({
             url: '/api/userSpace/list',
@@ -120,20 +145,19 @@
                     return;
                 }
 
-                // 1. 중복 확인을 위한 Set 생성 (ADMIN용)
+                // ADMIN 그룹 중복 제거용 Map
                 let adminGroupSet = new Map();
 
                 $.each(data, function(index, item){
-                    let role = item.role; // "ADMIN" or "USER"
+                    let role = item.role;
                     let groupName = item.groupName ? item.groupName : "그룹없음";
                     let workName = item.workName ? item.workName : "업무명없음";
                     let spaceCode = item.spaceCode ? item.spaceCode : "코드없음";
                     let groupId = item.groupId;
 
                     if(role === 'ADMIN'){
-                        // ★ [ADMIN 로직] 그룹 이름이 이미 등록됐는지 확인
+                        // 이미 등록된 그룹명이 아니면 그리기
                         if(!adminGroupSet.has(groupName)){
-                            // 처음 보는 그룹명이면 Set에 추가하고 화면에 그리기
                             adminGroupSet.set(groupName, groupId);
 
                             let html = `
@@ -147,10 +171,9 @@
                             `;
                             adminArea.append(html);
                         }
-                        // 이미 Set에 있다면? -> 무시함 (중복 제거 효과)
 
                     } else if(role === 'USER'){
-                        // ★ [USER 로직] 중복 상관없이 모두 그리기
+                        // USER는 모든 업무를 나열
                         let html = `
                             <div class="card-item">
                                 <div class="item-info">
@@ -171,7 +194,6 @@
                     }
                 });
 
-                // 데이터는 있는데 ADMIN이 하나도 없거나 USER가 하나도 없는 경우 처리
                 if(adminArea.is(':empty')) adminArea.html("<div class='p-2 text-muted'>관리 중인 그룹이 없습니다.</div>");
                 if(userArea.is(':empty')) userArea.html("<div class='p-2 text-muted'>참여 중인 업무가 없습니다.</div>");
             },
@@ -181,7 +203,7 @@
         });
     }
 
-    // 인계하기 버튼 (초대 기능 재활용)
+    // 인계하기 버튼 (초대 기능)
     function requestHandover(spaceId){
         let email = prompt("업무를 인계할 사용자의 이메일을 입력하세요:");
         if(!email) return;
@@ -197,6 +219,14 @@
                 alert(msg);
             }
         });
+    }
+
+    // [추가] 로그아웃 함수
+    function logout() {
+        if(confirm("로그아웃 하시겠습니까?")) {
+            localStorage.removeItem("accessToken"); // 토큰 삭제
+            location.href = "/user/login"; // 로그인 페이지로 이동
+        }
     }
 </script>
 
