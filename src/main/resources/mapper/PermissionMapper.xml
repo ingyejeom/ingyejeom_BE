@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0/EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thc.capstone.mapper.PermissionMapper">
+
+    <select id="access" parameterType="hashMap" resultType="String">
+        SELECT permissiondetail.target
+        FROM permission, permissiondetail, permissionuser
+        WHERE permission.id = permissiondetail.permission_id
+          AND permission.id = permissionuser.permission_id
+          AND permissiondetail.func = '200'
+          AND permissionuser.user_id = #{userId}
+          AND permission.deleted = false
+          AND permissiondetail.deleted = false
+          AND permissionuser.deleted = false
+        GROUP BY permissiondetail.target
+    </select>
+
+    <select id="isPermitted" parameterType="hashMap" resultType="Integer">
+        SELECT count(permission.id) as listCount
+        FROM permission, permissiondetail, permissionuser
+        WHERE permission.id = permissiondetail.permission_id
+          AND permission.id = permissionuser.permission_id
+          AND permissiondetail.target = #{target}
+          AND permissiondetail.func = #{func}
+          AND permissionuser.user_id = #{userId}
+          AND permission.deleted = false
+          AND permissiondetail.deleted = false
+          AND permissionuser.deleted = false
+    </select>
+
+    <!---->
+
+    <select id="detail" parameterType="hashMap" resultType="com.thc.capstone.dto.PermissionDto$DetailResDto">
+        SELECT permission.id
+             , permission.deleted
+             , permission.created_at as createdAt
+             , permission.modified_at as modifiedAt
+             , permission.title
+             , permission.content
+        FROM permission
+        WHERE permission.id = ${id}
+    </select>
+
+    <!-- 공통 WHERE 절 -->
+    <sql id="commonWhere">
+        WHERE permission.id is not null
+        <if test = "deleted != null">AND permission.deleted = #{deleted}</if>
+        <if test = "title != null and title !=''">AND permission.title LIKE CONCAT('%', #{title}, '%')</if>
+    </sql>
+
+    <select id="list" parameterType="hashMap" resultType="com.thc.capstone.dto.PermissionDto$DetailResDto">
+        SELECT permission.id
+        FROM permission
+        <include refid="commonWhere"/>
+    </select>
+</mapper>

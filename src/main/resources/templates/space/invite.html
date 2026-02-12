@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>스페이스 초대</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #fff;
+        }
+        h2 { margin-bottom: 30px; font-weight: normal; color: #333; }
+        .input-group { width: 300px; margin-bottom: 20px; text-align: left; }
+        label { display: block; margin-bottom: 8px; color: #666; font-size: 14px; }
+        input {
+            width: 100%; padding: 12px;
+            background-color: #f2f2f2; border: 1px solid #ddd;
+            border-radius: 0; box-sizing: border-box; font-size: 14px;
+        }
+        .btn-submit {
+            width: 300px; padding: 12px;
+            background-color: #e0e0e0; border: 1px solid #ccc;
+            color: #333; font-size: 16px; cursor: pointer;
+        }
+        .btn-submit:hover { background-color: #d0d0d0; }
+    </style>
+</head>
+<body>
+
+<h2>스페이스 초대</h2>
+
+<div class="input-group">
+    <label>유저 이메일</label>
+    <input type="email" id="email" placeholder="초대할 유저 이메일">
+</div>
+
+<input type="hidden" id="spaceId">
+
+<button class="btn-submit" onclick="inviteUser()">초대하기</button>
+
+<script>
+    $(document).ready(function() {
+        // URL에서 spaceId 파라미터 추출 (?spaceId=1)
+        const urlParams = new URLSearchParams(window.location.search);
+        const spaceId = urlParams.get('spaceId');
+
+        if(!spaceId) {
+            alert("잘못된 접근입니다. 스페이스 정보가 없습니다.");
+            location.href = "/space/list";
+        }
+        $("#spaceId").val(spaceId);
+    });
+
+    function inviteUser() {
+        let email = $("#email").val().trim();
+        let spaceId = $("#spaceId").val();
+
+        if(!email) { alert("이메일을 입력해주세요."); return; }
+
+        let accessToken = localStorage.getItem("accessToken");
+
+        $.ajax({
+            url: '/api/userSpace/invite',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                "email": email,
+                "spaceId": spaceId
+            }),
+            beforeSend: function(xhr){
+                if(accessToken) xhr.setRequestHeader("Authorization", accessToken);
+            },
+            success: function() {
+                alert("초대되었습니다!");
+                location.href = "/space/list";
+            },
+            error: function(xhr) {
+                alert("초대 실패: " + (xhr.responseJSON?.message || "존재하지 않는 유저이거나 권한이 없습니다."));
+            }
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0/EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thc.capstone.mapper.FileMapper">
+
+    <select id="list" parameterType="hashMap" resultType="com.thc.capstone.dto.FileDto$DetailResDto">
+        SELECT f.id
+             , f.created_at as createdAt
+             , f.original_file_name as originalFileName
+             , f.file_url as fileUrl
+             , f.size
+             , u.name as uploaderName
+        FROM tb_file f
+                 JOIN user_space us ON f.user_space_id = us.id
+                 JOIN user u ON us.user_id = u.id
+        WHERE us.space_id = #{spaceId}
+          AND f.deleted = false
+          AND us.deleted = false
+        ORDER BY f.created_at DESC
+    </select>
+
+</mapper>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0/EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thc.capstone.mapper.PermissionuserMapper">
+
+    <!---->
+
+    <select id="detail" parameterType="hashMap" resultType="com.thc.capstone.dto.PermissionuserDto$DetailResDto">
+        SELECT permissionuser.id
+             , permissionuser.deleted
+             , permissionuser.created_at as createdAt
+             , permissionuser.modified_at as modifiedAt
+             , permissionuser.permission_id as permissionId
+             , permissionuser.user_id as userId
+
+             , user.username as userUsername
+        FROM permissionuser, user
+        WHERE permissionuser.id = ${id}
+          AND permissionuser.user_id = user.id
+    </select>
+
+    <!-- 공통 WHERE 절 -->
+    <sql id="commonWhere">
+        WHERE permissionuser.id is not null
+        <if test = "deleted != null">AND permissionuser.deleted = #{deleted}</if>
+        <if test = "permissionId != null">AND permissionuser.permission_id = #{permissionId}</if>
+        <if test = "userId != null">AND permissionuser.user_id = #{userId}</if>
+    </sql>
+
+    <select id="list" parameterType="hashMap" resultType="com.thc.capstone.dto.PermissionuserDto$DetailResDto">
+        SELECT permissionuser.id
+        FROM permissionuser
+        <include refid="commonWhere"/>
+    </select>
+</mapper>

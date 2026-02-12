@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>스페이스 생성</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 500px; /* 이메일 입력칸 때문에 너비 약간 증가 */
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            background-color: #f2f2f2;
+        }
+        input[type="text"]:focus {
+            background-color: white;
+            outline: 2px solid #555;
+        }
+
+        /* 동적 입력 영역 */
+        #space_inputs_area {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+
+        /* [수정] 입력칸 한 줄 스타일 (이름 + 이메일 + 삭제버튼) */
+        .space-input-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .space-name-input { flex: 1; }
+        .space-email-input { flex: 1; }
+
+        .btn-remove {
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 30px;
+            height: 38px; /* input 높이와 맞춤 */
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 버튼 스타일 */
+        .btn-add {
+            width: 100%;
+            padding: 8px;
+            background-color: white;
+            border: 1px dashed #aaa;
+            color: #555;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+        .btn-add:hover {
+            background-color: #f0f0f0;
+            border-color: #555;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .btn-submit:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>스페이스 생성</h2>
+
+    <div class="input-group">
+        <label for="groupName">그룹 이름</label>
+        <input type="text" id="groupName" placeholder="그룹 이름을 입력하세요">
+    </div>
+
+    <div class="input-group">
+        <label>스페이스 및 담당자 설정</label>
+
+        <div id="space_inputs_area">
+            <div class="space-input-row">
+                <input type="text" class="space-name-input" placeholder="스페이스 이름 (필수)">
+                <input type="text" class="space-email-input" placeholder="담당자 이메일 (선택)">
+            </div>
+        </div>
+
+        <button class="btn-add" onclick="addSpaceInput()">+ 스페이스 추가</button>
+    </div>
+
+    <button class="btn-submit" onclick="createMultiSpaces()">생성하기</button>
+</div>
+
+<script>
+    // 토큰 가져오기
+    const accessToken = localStorage.getItem("accessToken");
+
+    // 1. 입력칸 추가 함수
+    function addSpaceInput() {
+        let html = `
+            <div class="space-input-row">
+                <input type="text" class="space-name-input" placeholder="스페이스 이름">
+                <input type="text" class="space-email-input" placeholder="담당자 이메일">
+                <button class="btn-remove" onclick="removeInput(this)">-</button>
+            </div>
+        `;
+        $("#space_inputs_area").append(html);
+    }
+
+    // 2. 입력칸 삭제 함수
+    function removeInput(btn) {
+        $(btn).parent().remove();
+    }
+
+    // 3. 생성 요청 함수
+    function createMultiSpaces() {
+        if (!accessToken) {
+            alert("로그인이 필요합니다.");
+            location.href = "/user/login";
+            return;
+        }
+
+        // 그룹 이름 확인
+        let groupName = $("#groupName").val().trim();
+        if (!groupName) {
+            alert("그룹 이름을 입력해주세요.");
+            return;
+        }
+
+        let spaces = [];
+
+        // 각 줄을 돌면서 이름과 이메일 수집
+        $(".space-input-row").each(function() {
+            let workName = $(this).find(".space-name-input").val().trim();
+            let userEmail = $(this).find(".space-email-input").val().trim();
+
+            // 이름이 있는 경우에만 추가
+            if (workName) {
+                spaces.push({
+                    "workName": workName,
+                    "userEmail": userEmail // 이메일이 비어있으면 빈 값으로 전송됨
+                });
+            }
+        });
+
+        if (spaces.length === 0) {
+            alert("최소 하나의 스페이스 이름을 입력해주세요.");
+            return;
+        }
+
+        // 서버로 보낼 데이터 (DTO 구조 변경 반영)
+        // GroupDto.CreateReqDto { groupName, spaces: [{workName, userEmail}, ...] }
+        let reqData = {
+            "groupName": groupName,
+            "spaces": spaces
+        };
+
+        // Ajax 요청
+        $.ajax({
+            url: '/api/group',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(reqData),
+            beforeSend: function(xhr){
+                xhr.setRequestHeader("Authorization", accessToken);
+            },
+            success: function (response) {
+                alert("성공적으로 생성되었습니다!");
+                location.replace("/space/list"); // 목록 화면으로 이동
+            },
+            error: function (xhr, status, err) {
+                console.error(xhr);
+                if(xhr.status === 403) {
+                    alert("권한이 없습니다.");
+                } else {
+                    let msg = "생성에 실패했습니다.";
+                    if(xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    }
+                    alert(msg);
+                }
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

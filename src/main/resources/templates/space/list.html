@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>내 스페이스 목록</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #ffffff; margin: 0; padding: 40px; }
+
+        /* 상단 헤더 */
+        .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 50px; }
+        .header-buttons { display: flex; gap: 20px; }
+        .btn-header { width: 120px; height: 50px; line-height: 50px; background-color: #e9ecef; border: 1px solid #ced4da; text-align: center; font-size: 16px; color: #333; text-decoration: none; cursor: pointer; border-radius: 4px; }
+        .btn-header:hover { background-color: #dee2e6; }
+
+        /* 유저 정보 스타일 수정 */
+        .user-info { font-size: 18px; color: #555; font-weight: 500; }
+
+        /* [추가] 프로필 링크 스타일: 클릭 가능해 보이게 처리 */
+        .profile-link { text-decoration: none; color: inherit; cursor: pointer; transition: color 0.2s; }
+        .profile-link:hover { color: #007bff; text-decoration: underline; font-weight: bold; }
+
+        h2 { font-size: 24px; color: #555; margin-bottom: 20px; font-weight: normal; }
+
+        /* 카드 그리드 */
+        .space-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 30px; }
+
+        /* 카드 스타일 */
+        .space-card { background-color: #f8f9fa; border: 1px solid #ced4da; padding: 25px; height: 180px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; }
+        .card-top { font-size: 18px; font-weight: 600; color: #333; }
+        .card-bottom { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+
+        /* 버튼 스타일 */
+        .btn-invite { padding: 8px 15px; background-color: #868e96; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn-invite:hover { background-color: #495057; }
+
+        /* 입장 버튼 */
+        .btn-enter { padding: 8px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn-enter:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div class="top-header">
+    <div class="header-buttons">
+        <a href="/group/create" class="btn-header">생성</a>
+        <a href="/space/join" class="btn-header">참여</a>
+    </div>
+
+    <div id="user_info_area" class="user-info"></div>
+</div>
+
+<h2>내 스페이스</h2>
+
+<div id="space_list" class="space-grid"></div>
+
+<script>
+    $(document).ready(function(){
+        let accessToken = localStorage.getItem("accessToken");
+        if(accessToken){
+            $.ajaxSetup({
+                beforeSend: function(xhr){
+                    if (!accessToken.startsWith("Bearer ")) accessToken = "Bearer " + accessToken;
+                    xhr.setRequestHeader("Authorization", accessToken);
+                }
+            });
+        }
+
+        loadUserInfo();
+        loadSpaceList();
+    });
+
+    // [수정] 유저 정보를 불러와서 클릭 가능한 링크로 표시
+    function loadUserInfo() {
+        $.ajax({
+            url: '/api/user',
+            method: 'GET',
+            success: function(data) {
+                // name이 있으면 name, 없으면 username 사용
+                let userName = data.name ? data.name : data.username;
+
+                // [변경 포인트] <a> 태그를 사용하여 클릭 시 /user/profile 로 이동하게 함
+                let htmlContent = `<a href="/user/profile" class="profile-link">${userName}님</a>`;
+                $("#user_info_area").html(htmlContent);
+            },
+            error: function(err) {
+                console.log("유저 정보 로드 실패");
+            }
+        });
+    }
+
+    function loadSpaceList(){
+        $.ajax({
+            url: '/api/userSpace/list',
+            method: 'GET',
+            data: { deleted: false,
+                    role: "USER" },
+            success: function (data) {
+                let listArea = $("#space_list");
+                listArea.empty();
+
+                if(!data || data.length === 0){
+                    listArea.html("<p style='color:#777; padding:10px;'>참여 중인 스페이스가 없습니다.</p>");
+                    return;
+                }
+
+                $.each(data, function(index, us){
+                    let groupName = us.groupName ? us.groupName : "그룹없음";
+                    let workName = us.workName ? us.workName : "이름없음";
+
+                    let cardHtml = `
+                        <div class="space-card">
+                            <div class="card-top">${groupName} ${workName}</div>
+                            <div class="card-bottom">
+                                <button class="btn-enter" onclick="goFileDetail(${us.spaceId})">파일</button>
+                                <button class="btn-enter" onclick="goSpaceDetail(${us.spaceId})">입장</button>
+                                <button class="btn-invite" onclick="requestInvite(${us.spaceId})">초대</button>
+                            </div>
+                        </div>
+                    `;
+                    listArea.append(cardHtml);
+                });
+            },
+            error: function (err) {
+                if(err.status === 401 || err.status === 403){
+                    alert("로그인이 필요합니다.");
+                    location.href = "/user/login";
+                } else {
+                    alert("목록을 불러오지 못했습니다.");
+                }
+            }
+        });
+    }
+
+    function goSpaceDetail(spaceId) {
+        location.href = '/space/detail/' + spaceId;
+    }
+
+    function goFileDetail(spaceId) {
+        location.href = '/space/fileList/' + spaceId;
+    }
+
+    function requestInvite(spaceId) {
+        let email = prompt("초대할 이메일 입력:");
+        if (!email) return;
+
+        $.ajax({
+            url: '/api/userSpace/invite',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ spaceId: spaceId, email: email.trim() }),
+            success: function() { alert("초대 완료!"); },
+            error: function(err) { alert(err.responseText || "초대 실패"); }
+        });
+    }
+</script>
+</body>
+</html>

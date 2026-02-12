@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+</head>
+<body>
+Hello World!
+
+<script>
+    let refreshToken = localStorage.getItem("refreshToken");
+    if(refreshToken === null || refreshToken + "" === "" || refreshToken + "" === "undefined"){
+        alert("not yet!");
+    } else {
+        if(refreshToken.startsWith("Bearer ")) {
+            alert("logged in!");
+        } else {
+            alert("not yet");
+        }
+    }
+</script>
+</body>
+</html>
