@@ -5,5 +5,5 @@ import com.thc.capstone.dto.FileDto;
 import java.util.List;
 
 public interface FileMapper {
-    List<FileDto.DetailResDto> list(FileDto.ListReqDto param);
+    List<FileDto.DetailResDto> listItems(FileDto.ListReqDto param);
 }
