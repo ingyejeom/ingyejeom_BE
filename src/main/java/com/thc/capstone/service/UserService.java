@@ -16,5 +16,5 @@ public interface UserService {
 
     UserDto.DetailResDto detail(DefaultDto.DetailReqDto param, Long reqUserId);
 
-    List<UserDto.DetailResDto> list(UserDto.ListReqDto param);
+    List<UserDto.DetailResDto> list(UserDto.ListReqDto param, Long reqUserId);
 }

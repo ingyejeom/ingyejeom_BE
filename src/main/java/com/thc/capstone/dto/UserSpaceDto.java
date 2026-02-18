@@ -48,6 +48,8 @@ public class UserSpaceDto {
         Long userId;
         Long spaceId;
 
+        Long groupId;
+
         String groupName;
         String workName;
         String spaceCode;
@@ -59,5 +61,8 @@ public class UserSpaceDto {
          * 이후 검색 기능을 구현할 때 넣을 것
          */
         UserSpaceStatus status;
+        Role role;
+
+        Long groupId;
     }
 }

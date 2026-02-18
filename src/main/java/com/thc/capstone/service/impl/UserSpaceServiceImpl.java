@@ -163,7 +163,15 @@ public class UserSpaceServiceImpl implements UserSpaceService {
         Map<String, Object> map = new HashMap<>();
         map.put("reqUserId", reqUserId);
         map.put("deleted", false);
-        map.put("status", "ACTIVE");
+        map.put("status", param.getStatus() != null ? param.getStatus() : "ACTIVE");
+
+        if(param.getRole() != null){
+            map.put("role", param.getRole());
+        }
+
+        if(param.getGroupId() != null){
+            map.put("groupId", param.getGroupId());
+        }
 
         List<UserSpaceDto.DetailResDto> idList = userSpaceMapper.list(map);
 

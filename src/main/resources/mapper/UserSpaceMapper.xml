@@ -15,6 +15,7 @@
             , space.work_name as workName
             , space.space_code as spaceCode
             , tb_group.group_name as groupName
+            , tb_group.id as groupId
         FROM user_space
         LEFT JOIN space ON user_space.space_id = space.id
         LEFT JOIN tb_group ON space.group_id = tb_group.id
@@ -31,8 +32,36 @@
             resultType="com.thc.capstone.dto.UserSpaceDto$DetailResDto">
         SELECT user_space.id
         FROM user_space
+        LEFT JOIN space ON user_space.space_id = space.id
+        LEFT JOIN tb_group ON space.group_id = tb_group.id
+
         <include refid="commonWhere"/>
         AND user_space.user_id = #{reqUserId}
-        AND user_space.status = 'ACTIVE'
+
+        <if test="status != null">AND user_space.status = #{status}</if>
+        <if test="role != null">AND user_space.role = #{role}</if>
+        <if test="deleted != null">AND space.deleted = #{deleted}</if>
+        <if test="groupId != null">AND space.group_id = #{groupId}</if>
     </select>
+
+<!--  Group과 Space의 Update에 대해서 권한을 체크하기 위함  -->
+
+    <select id="isGroupAdmin" parameterType="hashMap" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM user_space us
+                 JOIN space s ON us.space_id = s.id
+        WHERE us.user_id = #{userId}
+          AND s.group_id = #{groupId}
+          AND us.role = 'ADMIN'
+    </select>
+
+    <select id="isSpaceAdmin" parameterType="hashMap" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM user_space
+        WHERE user_id = #{userId}
+          AND space_id = #{spaceId}
+          AND role = 'ADMIN'
+          AND status = 'ACTIVE'
+    </select>
+
 </mapper>

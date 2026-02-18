@@ -10,7 +10,10 @@
 
              , space.work_name as workName
             , space.space_code as spaceCode
+
+            , tb_group.group_name as groupName
         FROM space
+        LEFT JOIN tb_group ON space.group_id = tb_group.id
         WHERE space.id = #{id}
     </select>
 

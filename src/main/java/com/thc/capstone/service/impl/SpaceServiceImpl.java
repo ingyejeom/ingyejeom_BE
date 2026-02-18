@@ -5,6 +5,7 @@ import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.SpaceDto;
 import com.thc.capstone.dto.UserSpaceDto;
 import com.thc.capstone.mapper.SpaceMapper;
+import com.thc.capstone.mapper.UserSpaceMapper;
 import com.thc.capstone.repository.GroupRepository;
 import com.thc.capstone.repository.SpaceRepository;
 import com.thc.capstone.repository.UserRepository;
@@ -27,11 +28,14 @@ import java.util.Map;
 @Service
 public class SpaceServiceImpl implements SpaceService {
     final SpaceRepository spaceRepository;
-    final UserRepository userRepository;
     final UserSpaceRepository userSpaceRepository;
     final GroupRepository groupRepository;
     final SpaceMapper spaceMapper;
     final PermittedService permittedService;
+    final UserRepository userRepository;
+
+    // 스페이스 수정 시 권한 체크를 위함
+    final UserSpaceMapper userSpaceMapper;
 
     String target = "space";
 
@@ -39,51 +43,51 @@ public class SpaceServiceImpl implements SpaceService {
     private static final int CODE_LENGTH = 8; // 코드 길이 (예: 8자리)
     private final SecureRandom random = new SecureRandom();
 
-    /**
-     * Space를 생성할 때,
-     * 요청을 한 사람의 ID와 생성된 Space ID를 통해 UserSpace를 생성합니다
-     * Default : "ADMIN", "ACTIVE"
-     *
-     * CreateReqDto에 GroupName도 같이 받아 Group도 생성합니다
-     */
     @Override
     @Transactional
-    public void create(SpaceDto.MultiCreateReqDto param, Long reqUserId) {
-        permittedService.check(target, 110, reqUserId);
+    public DefaultDto.CreateResDto create(SpaceDto.CreateReqDto param, Long reqUserId) {
+//        permittedService.check(target, 110, reqUserId);
 
-        try {
-            User user = userRepository.findById(reqUserId)
-                    .orElseThrow(() -> new RuntimeException("유저 없음"));
+        if (reqUserId == null) {
+            throw new RuntimeException("로그인이 필요한 서비스입니다.");
+        }
 
-            // Group 생성
-            Group group = Group.of(param.getGroupName());
-            groupRepository.save(group);
+        try{
+            Group group = groupRepository.findById(param.getGroupId())
+                    .orElseThrow(() -> new RuntimeException("존재하지 않는 그룹"));
 
-            // Space 목록 생성 (자식)
-            for(String workName : param.getWorkNames()){
-                // 코드 생성
-                String uniqueSpaceCode;
-                // Unique한 코드가 생성될 때까지 반복
-                do {
-                    uniqueSpaceCode = generateRandomCode();
-                } while (spaceRepository.existsBySpaceCode(uniqueSpaceCode));
+            String uniqueSpaceCode;
+            do {
+                uniqueSpaceCode = generateRandomCode();
+            } while (spaceRepository.existsBySpaceCode(uniqueSpaceCode));
 
-                // Space 생성 (groupId 주입)
-                Space space = Space.of(workName, uniqueSpaceCode, group.getId());
-                spaceRepository.save(space);
+             Space space = Space.of(param.getWorkName(), uniqueSpaceCode, group.getId());
+             spaceRepository.save(space);
 
-                // UserSpace 생성
-                UserSpace userSpace = UserSpace.of(
-                        Role.ADMIN,
-                        UserSpaceStatus.ACTIVE,
-                        user.getId(),
-                        space.getId()
-                );
-                userSpaceRepository.save(userSpace);
+            UserSpace userSpace = UserSpace.of(
+                    Role.ADMIN,
+                    UserSpaceStatus.ACTIVE,
+                    reqUserId,
+                    space.getId()
+            );
+            userSpaceRepository.save(userSpace);
+
+            if(param.getUserEmail() != null && !param.getUserEmail().trim().isEmpty()){
+                userRepository.findByEmail(param.getUserEmail())
+                        .ifPresent(assignee -> {
+                            UserSpace assigneeUserSpace = UserSpace.of(
+                                    Role.USER,
+                                    UserSpaceStatus.ACTIVE,
+                                    assignee.getId(),
+                                    space.getId()
+                            );
+                            userSpaceRepository.save(assigneeUserSpace);
+                        });
             }
-        } catch (Exception e) {
-            log.error("스페이스 생성 중 실패! 원인: {}", e.getMessage());
 
+            return space.toCreateResDto();
+        } catch (Exception e) {
+            log.error("스페이스 추가 실패 : {}", e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -100,10 +104,12 @@ public class SpaceServiceImpl implements SpaceService {
 
     @Override
     public void update(SpaceDto.UpdateReqDto param, Long reqUserId) {
-        permittedService.check(target, 120, reqUserId);
-
         Space space = spaceRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("데이터가 없습니다"));
+
+        if (!userSpaceMapper.isSpaceAdmin(Map.of("userId", reqUserId, "spaceId", space.getId()))) {
+            permittedService.check(target, 120, reqUserId);
+        }
 
         space.update(param);
         spaceRepository.save(space);
@@ -118,7 +124,7 @@ public class SpaceServiceImpl implements SpaceService {
     }
 
     public SpaceDto.DetailResDto get(DefaultDto.DetailReqDto param, Long reqUserId) {
-        permittedService.check(target, 200, reqUserId);
+//        permittedService.check(target, 200, reqUserId);
 
         SpaceDto.DetailResDto res = spaceMapper.detail(param.getId());
 

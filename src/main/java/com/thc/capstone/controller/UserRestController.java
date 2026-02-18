@@ -56,7 +56,7 @@ public class UserRestController {
 
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/list")
-    public ResponseEntity<List<UserDto.DetailResDto>> list(UserDto.ListReqDto param) {
-        return ResponseEntity.ok(userService.list(param));
+    public ResponseEntity<List<UserDto.DetailResDto>> list(UserDto.ListReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        return ResponseEntity.ok(userService.list(param, getUserId(principalDetails)));
     }
 }

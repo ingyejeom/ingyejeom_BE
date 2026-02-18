@@ -58,6 +58,10 @@
 </div>
 
 <script>
+    $(document).ready(function() {
+        localStorage.removeItem("accessToken");
+    });
+
     // 회원가입 버튼 클릭 시
     function signup_user() {
         location.href = "/user/signup";

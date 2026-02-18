@@ -11,20 +11,13 @@ import lombok.experimental.SuperBuilder;
 import java.util.List;
 
 public class SpaceDto {
-    /**
-     * 한 번에 그룹 1개 + 스페이스 N개를 생성하기 위한 DTO
-     */
-    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
-    public static class MultiCreateReqDto {
-        String groupName;
-        List<String> workNames;
-    }
 
-    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class CreateReqDto {
         String workName;
         String spaceCode;
         Long groupId;
+        String userEmail;
 
         public Space toEntity(){
             return Space.of(getWorkName(), getSpaceCode(), getGroupId());
@@ -46,6 +39,8 @@ public class SpaceDto {
     public static class DetailResDto extends DefaultDto.DetailResDto {
         String workName;
         String spaceCode;
+
+        String groupName;
     }
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder

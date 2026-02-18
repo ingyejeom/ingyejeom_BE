@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>내 프로필</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/startbootstrap-sb-admin-2/4.1.4/css/sb-admin-2.min.css" rel="stylesheet">
+
+    <style>
+        body { background-color: #f8f9fc; padding: 40px; }
+        .profile-wrapper { display: flex; gap: 40px; }
+
+        /* 왼쪽 프로필 카드 */
+        .profile-section {
+            width: 300px; background: white; border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 40px 20px;
+            text-align: center; height: fit-content;
+        }
+        .profile-icon { font-size: 80px; color: #eaecf4; margin-bottom: 20px; }
+        .profile-name { font-size: 22px; font-weight: bold; color: #5a5c69; margin-bottom: 5px; }
+        .profile-email { font-size: 15px; color: #858796; margin-bottom: 30px; }
+
+        /* [추가] 로그아웃 버튼 스타일 */
+        .btn-logout {
+            background-color: white;
+            border: 1px solid #e74a3b;
+            color: #e74a3b;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 80%;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover {
+            background-color: #e74a3b;
+            color: white;
+        }
+
+        /* 오른쪽 리스트 영역 */
+        .list-section { flex: 1; }
+        .section-header { font-size: 18px; font-weight: bold; color: #4e73df; margin-bottom: 15px; border-left: 4px solid #4e73df; padding-left: 10px; }
+
+        .card-item {
+            background: white; border: 1px solid #e3e6f0; border-radius: 5px;
+            padding: 20px; margin-bottom: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .item-info strong { font-size: 18px; color: #333; }
+        .item-info span { display: block; font-size: 14px; color: #888; margin-top: 4px; }
+
+        /* 버튼 스타일 */
+        .btn-gray { background-color: #858796; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 14px; cursor: pointer; }
+        .btn-yellow { background-color: #f6c23e; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 14px; cursor: pointer; }
+        .btn-yellow:hover { background-color: #dfa528; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="mb-4">
+        <a href="/space/list" class="btn btn-light btn-sm">← 내 스페이스 목록</a>
+    </div>
+
+    <div class="profile-wrapper">
+        <div class="profile-section">
+            <div class="profile-icon">👤</div>
+            <div id="text_name" class="profile-name">-</div>
+            <div id="text_email" class="profile-email">-</div>
+
+            <button class="btn-logout" onclick="logout()">로그아웃</button>
+        </div>
+
+        <div class="list-section">
+
+            <div class="mb-5">
+                <div class="section-header">내 그룹 (관리자)</div>
+                <div id="admin_list_area">
+                </div>
+            </div>
+
+            <div>
+                <div class="section-header">참여 중인 업무 (사용자)</div>
+                <div id="user_list_area">
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function(){
+        // 1. 토큰 헤더 설정
+        let accessToken = localStorage.getItem("accessToken");
+        if(accessToken){
+            $.ajaxSetup({
+                beforeSend: function(xhr){
+                    if (!accessToken.startsWith("Bearer ")) accessToken = "Bearer " + accessToken;
+                    xhr.setRequestHeader("Authorization", accessToken);
+                }
+            });
+        }
+
+        // 2. 데이터 로드
+        loadMyProfile();
+        loadMySpaces();
+    });
+
+    // 내 정보(이름, 이메일) 불러오기
+    function loadMyProfile(){
+        $.ajax({
+            url: '/api/user',
+            method: 'GET',
+            data: { deleted: false },
+            success: function(data){
+                let name = data.name ? data.name : data.username;
+                let email = data.email ? data.email : "";
+                $("#text_name").text(name);
+                $("#text_email").text(email);
+            },
+            error: function(){
+                // 토큰 만료 등의 이유로 실패 시 로그인 페이지로
+                // location.href = "/user/login";
+            }
+        });
+    }
+
+    // 스페이스 목록 불러와서 ADMIN(그룹핑), USER(나열) 분리
+    function loadMySpaces(){
+        $.ajax({
+            url: '/api/userSpace/list',
+            method: 'GET',
+            data: { deleted: false },
+            success: function(data){
+                let adminArea = $("#admin_list_area");
+                let userArea = $("#user_list_area");
+                adminArea.empty();
+                userArea.empty();
+
+                if(!data || data.length === 0){
+                    adminArea.html("<div class='p-2 text-muted'>관리 중인 그룹이 없습니다.</div>");
+                    userArea.html("<div class='p-2 text-muted'>참여 중인 업무가 없습니다.</div>");
+                    return;
+                }
+
+                // ADMIN 그룹 중복 제거용 Map
+                let adminGroupSet = new Map();
+
+                $.each(data, function(index, item){
+                    let role = item.role;
+                    let groupName = item.groupName ? item.groupName : "그룹없음";
+                    let workName = item.workName ? item.workName : "업무명없음";
+                    let spaceCode = item.spaceCode ? item.spaceCode : "코드없음";
+                    let groupId = item.groupId;
+
+                    if(role === 'ADMIN'){
+                        // 이미 등록된 그룹명이 아니면 그리기
+                        if(!adminGroupSet.has(groupName)){
+                            adminGroupSet.set(groupName, groupId);
+
+                            let html = `
+                                <div class="card-item">
+                                    <div class="item-info">
+                                        <strong>${groupName}</strong>
+                                        <span>관리자 권한</span>
+                                    </div>
+                                    <button class="btn-gray" onclick="location.href='/group/spaceList/${groupId}'">그룹 관리</button>
+                                </div>
+                            `;
+                            adminArea.append(html);
+                        }
+
+                    } else if(role === 'USER'){
+                        // USER는 모든 업무를 나열
+                        let html = `
+                            <div class="card-item">
+                                <div class="item-info">
+                                    <div style="font-size: 18px; font-weight: bold; color: #333;">
+                                        ${groupName}
+                                    </div>
+                                    <span style="display: block; font-size: 14px; color: #888; margin-top: 4px;">
+                                        ${workName}
+                                    </span>
+                                    <span style="display: block; font-size: 14px; color: #888; margin-top: 4px;">
+                                        [ ${spaceCode} ]
+                                    </span>
+                                </div>
+                                <button class="btn-yellow" onclick="requestHandover(${item.spaceId})">인계하기</button>
+                            </div>
+                        `;
+                        userArea.append(html);
+                    }
+                });
+
+                if(adminArea.is(':empty')) adminArea.html("<div class='p-2 text-muted'>관리 중인 그룹이 없습니다.</div>");
+                if(userArea.is(':empty')) userArea.html("<div class='p-2 text-muted'>참여 중인 업무가 없습니다.</div>");
+            },
+            error: function(err){
+                alert("목록을 불러오지 못했습니다.");
+            }
+        });
+    }
+
+    // 인계하기 버튼 (초대 기능)
+    function requestHandover(spaceId){
+        let email = prompt("업무를 인계할 사용자의 이메일을 입력하세요:");
+        if(!email) return;
+
+        $.ajax({
+            url: '/api/userSpace/invite',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ spaceId: spaceId, email: email.trim() }),
+            success: function() { alert("인계(초대) 메일을 발송했습니다."); },
+            error: function(err) {
+                let msg = err.responseJSON && err.responseJSON.message ? err.responseJSON.message : "실패했습니다.";
+                alert(msg);
+            }
+        });
+    }
+
+    // [추가] 로그아웃 함수
+    function logout() {
+        if(confirm("로그아웃 하시겠습니까?")) {
+            localStorage.removeItem("accessToken"); // 토큰 삭제
+            location.href = "/user/login"; // 로그인 페이지로 이동
+        }
+    }
+</script>
+
+</body>
+</html>

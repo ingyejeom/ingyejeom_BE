@@ -58,3 +58,6 @@ Thumbs.db
 
 ### drawio ###
 *.drawio
+
+### 인수인계 파일 로컬 저장 무시 ###
+files/
