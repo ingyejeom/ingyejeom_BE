@@ -28,17 +28,21 @@ public class File extends AuditingFields {
 
     private Long userSpaceId;
 
+    @Setter
+    private Long folderId;
+
     protected File() {}
-    private File(String originalFileName, String storeFileName, String fileUrl, Long size, Long userSpaceId) {
+    private File(String originalFileName, String storeFileName, String fileUrl, Long size, Long userSpaceId, Long folderId) {
         this.originalFileName = originalFileName;
         this.storeFileName = storeFileName;
         this.fileUrl = fileUrl;
         this.size = size;
         this.userSpaceId = userSpaceId;
+        this.folderId = folderId;
     }
 
-    public static File of (String originalFileName, String storeFileName, String fileUrl, Long size, Long userSpaceId) {
-        return new File(originalFileName, storeFileName, fileUrl, size, userSpaceId);
+    public static File of (String originalFileName, String storeFileName, String fileUrl, Long size, Long userSpaceId, Long folderId) {
+        return new File(originalFileName, storeFileName, fileUrl, size, userSpaceId, folderId);
     }
 
     // Update가 없어 delete 메서드 생성

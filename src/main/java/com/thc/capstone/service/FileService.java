@@ -10,9 +10,15 @@ import java.util.List;
 public interface FileService {
     void upload(FileDto.UploadReqDto param, Long reqUserId);
 
-    void delete(DefaultDto.UpdateReqDto param, Long reqUserId);
+    void createFolder(FileDto.CreateFolderReqDto param, Long reqUserId);
+
+    void deleteFile(DefaultDto.UpdateReqDto param, Long reqUserId);
+
+    void deleteFolder(DefaultDto.UpdateReqDto param, Long reqUserId);
 
     List<FileDto.DetailResDto> list(FileDto.ListReqDto param, Long reqUserId);
 
     FileDto.FileResourceDto getFileResource(Long fileId, Long reqUserId);
+
+    void move(FileDto.MoveReqDto param, Long reqUserId);
 }
