@@ -10,6 +10,7 @@ public class ChatbotDto {
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class ChatReqDto {
         private String question;
+        private Long spaceId;
     }
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
