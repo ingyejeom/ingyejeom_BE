@@ -2,20 +2,41 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0/EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.thc.capstone.mapper.FileMapper">
 
-    <select id="list" parameterType="hashMap" resultType="com.thc.capstone.dto.FileDto$DetailResDto">
-        SELECT f.id
-             , f.created_at as createdAt
-             , f.original_file_name as originalFileName
-             , f.file_url as fileUrl
-             , f.size
-             , u.name as uploaderName
+    <select id="listItems" parameterType="hashMap" resultType="com.thc.capstone.dto.FileDto$ItemResDto">
+        SELECT
+        id,
+        created_at as createdAt,
+        'FOLDER' as type,
+        name as name,
+        NULL as fileUrl,
+        NULL as size,
+        NULL as uploaderName
+        FROM folder
+        WHERE space_id = #{spaceId}
+        AND deleted = false
+        <if test="folderId == null">AND parent_id IS NULL</if>
+        <if test="folderId != null">AND parent_id = #{folderId}</if>
+
+        UNION ALL
+
+        SELECT
+        f.id,
+        f.created_at as createdAt,
+        'FILE' as type,
+        f.original_file_name as name,
+        f.file_url as fileUrl,
+        f.size as size,
+        u.name as uploaderName
         FROM tb_file f
-                 JOIN user_space us ON f.user_space_id = us.id
-                 JOIN user u ON us.user_id = u.id
+        JOIN user_space us ON f.user_space_id = us.id
+        JOIN user u ON us.user_id = u.id
         WHERE us.space_id = #{spaceId}
-          AND f.deleted = false
-          AND us.deleted = false
-        ORDER BY f.created_at DESC
+        AND f.deleted = false
+        AND us.deleted = false
+        <if test="folderId == null">AND f.folder_id IS NULL</if>
+        <if test="folderId != null">AND f.folder_id = #{folderId}</if>
+
+        ORDER BY type DESC, createdAt DESC
     </select>
 
 </mapper>

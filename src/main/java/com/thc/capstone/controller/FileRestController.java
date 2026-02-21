@@ -38,21 +38,37 @@ public class FileRestController {
     public ResponseEntity<Void> upload(
             @RequestPart("file") MultipartFile file,
             @RequestPart("spaceId") String spaceId, // FormData는 문자열로 옴
+            @RequestParam(value = "folderId", required = false) String folderId,
             @AuthenticationPrincipal PrincipalDetails principal
     ) {
+        Long fId = (folderId == null || folderId.equals("null") || folderId.isEmpty()) ? null : Long.parseLong(folderId);
+
         FileDto.UploadReqDto req = FileDto.UploadReqDto.builder()
                 .file(file)
                 .spaceId(Long.parseLong(spaceId))
+                .folderId(fId)
                 .build();
 
         fileService.upload(req, principal.getUser().getId());
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("")
-    public ResponseEntity<Void> delete(@RequestBody DefaultDto.UpdateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
-        fileService.delete(param, getUserId(principalDetails));
+    @PostMapping("/folder")
+    public ResponseEntity<Void> createFolder(@RequestBody FileDto.CreateFolderReqDto param, @AuthenticationPrincipal PrincipalDetails principal) {
+        fileService.createFolder(param, getUserId(principal));
+        return ResponseEntity.ok().build();
+    }
 
+    @DeleteMapping("")
+    public ResponseEntity<Void> deleteFile(@RequestBody DefaultDto.UpdateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        fileService.deleteFile(param, getUserId(principalDetails));
+
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/folder")
+    public ResponseEntity<Void> deleteFolder(@RequestBody DefaultDto.UpdateReqDto param, @AuthenticationPrincipal PrincipalDetails principal) {
+        fileService.deleteFolder(param, getUserId(principal));
         return ResponseEntity.ok().build();
     }
 
@@ -92,5 +108,11 @@ public class FileRestController {
                 .contentType(MediaType.parseMediaType(contentType))
                 .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition + "; filename=\"" + encodedUploadFileName + "\"")
                 .body(resourceDto.getResource());
+    }
+
+    @PutMapping("/move")
+    public ResponseEntity<Void> move(@RequestBody FileDto.MoveReqDto param, @AuthenticationPrincipal PrincipalDetails principal) {
+        fileService.move(param, getUserId(principal));
+        return ResponseEntity.ok().build();
     }
 }
