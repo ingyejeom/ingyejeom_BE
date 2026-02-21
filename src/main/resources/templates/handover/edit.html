@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인수인계서 편집</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- SortableJS for drag-and-drop -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        /* ========================================
+           기본 스타일 및 레이아웃
+           ======================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        /* ========================================
+           헤더 스타일
+           ======================================== */
+        .header {
+            background: white;
+            padding: 15px 30px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        /* ========================================
+           메인 컨테이너 (사이드바 + 콘텐츠)
+           ======================================== */
+        .main-container {
+            display: flex;
+            margin-top: 60px;
+            min-height: calc(100vh - 60px);
+        }
+
+        /* ========================================
+           좌측 사이드바 (모듈 팔레트)
+           ======================================== */
+        .sidebar {
+            width: 250px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            padding: 20px;
+            position: fixed;
+            top: 60px;
+            left: 0;
+            bottom: 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .module-palette {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .module-item {
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: grab;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .module-item:hover {
+            background: #e9ecef;
+            border-color: #007bff;
+        }
+
+        .module-item:active {
+            cursor: grabbing;
+        }
+
+        .module-item .icon {
+            font-size: 18px;
+        }
+
+        .module-item .label {
+            font-size: 13px;
+            color: #333;
+        }
+
+        .sidebar-help {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f0f7ff;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .sidebar-help strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        /* ========================================
+           메인 콘텐츠 영역
+           ======================================== */
+        .content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 30px;
+            max-width: 900px;
+        }
+
+        /* 인수인계서 제목 */
+        .document-header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .document-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .document-subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* ========================================
+           모듈 카드 스타일
+           ======================================== */
+        .modules-container {
+            min-height: 200px;
+        }
+
+        .module-card {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .module-card.dragging {
+            opacity: 0.5;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .module-header {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .module-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: #999;
+            padding: 5px;
+        }
+
+        .drag-handle:hover {
+            color: #333;
+        }
+
+        .module-type-icon {
+            font-size: 18px;
+        }
+
+        .module-type-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .module-header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            color: #666;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+
+        .btn-icon:hover {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .btn-delete {
+            color: #dc3545;
+        }
+
+        .btn-delete:hover {
+            background: #f8d7da;
+            color: #dc3545;
+        }
+
+        .module-body {
+            padding: 20px;
+        }
+
+        .module-body.collapsed {
+            display: none;
+        }
+
+        /* ========================================
+           폼 필드 스타일
+           ======================================== */
+        .form-row {
+            margin-bottom: 15px;
+        }
+
+        .form-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        textarea.form-control {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .form-row-inline {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        /* ========================================
+           드롭 영역 스타일
+           ======================================== */
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            color: #999;
+            margin-top: 15px;
+            transition: all 0.2s;
+        }
+
+        .drop-zone.drag-over {
+            border-color: #007bff;
+            background: #f0f7ff;
+            color: #007bff;
+        }
+
+        .drop-zone-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .drop-zone-text {
+            font-size: 14px;
+        }
+
+        /* ========================================
+           빈 상태 스타일
+           ======================================== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .empty-state-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .btn-start {
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn-start:hover {
+            background: #0056b3;
+        }
+
+        /* ========================================
+           삭제 확인 모달
+           ======================================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .modal-text {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========================================
+     헤더
+     ======================================== -->
+<header class="header">
+    <nav class="breadcrumb">
+        <a href="/space/list">🏠 내 스페이스</a>
+        <span>></span>
+        <span id="groupName">그룹명</span>
+        <span>></span>
+        <span id="spaceName">스페이스명</span>
+        <span>></span>
+        <span id="handoverTitle">인수인계서</span>
+    </nav>
+    <div class="header-buttons">
+        <button class="btn btn-secondary" onclick="previewHandover()">👁 미리보기</button>
+        <button class="btn btn-primary" onclick="saveHandover()">💾 저장</button>
+    </div>
+</header>
+
+<!-- ========================================
+     메인 컨테이너
+     ======================================== -->
+<div class="main-container">
+    <!-- 좌측 사이드바 (모듈 팔레트) -->
+    <aside class="sidebar">
+        <div class="sidebar-title">📦 모듈 목록</div>
+        <div class="module-palette" id="modulePalette">
+            <div class="module-item" data-type="BASIC_INFO">
+                <span class="icon">📋</span>
+                <span class="label">기본 정보</span>
+            </div>
+            <div class="module-item" data-type="ACCOUNT_ACCESS">
+                <span class="icon">🔐</span>
+                <span class="label">계정 정보</span>
+            </div>
+            <div class="module-item" data-type="TASK">
+                <span class="icon">📝</span>
+                <span class="label">업무/과업</span>
+            </div>
+            <div class="module-item" data-type="ASSET_BUDGET">
+                <span class="icon">💰</span>
+                <span class="label">자산/예산</span>
+            </div>
+            <div class="module-item" data-type="DOCUMENT_CONTACT">
+                <span class="icon">📁</span>
+                <span class="label">문서/연락망</span>
+            </div>
+            <div class="module-item" data-type="RISK">
+                <span class="icon">⚠️</span>
+                <span class="label">리스크</span>
+            </div>
+        </div>
+
+        <div class="sidebar-help">
+            <strong>💡 사용법</strong>
+            • 더블클릭하여 모듈 추가<br>
+            • 드래그하여 원하는 위치에 배치<br>
+            • [≡] 드래그하여 순서 변경<br>
+            • [✕] 클릭하여 모듈 삭제
+        </div>
+    </aside>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="content">
+        <!-- 문서 헤더 -->
+        <div class="document-header">
+            <div class="document-title" id="documentTitle">인수인계서</div>
+            <div class="document-subtitle" id="documentSubtitle">역할 인수인계 문서</div>
+        </div>
+
+        <!-- 모듈 컨테이너 (드래그 앤 드롭 영역) -->
+        <div class="modules-container" id="modulesContainer">
+            <!-- 모듈 카드들이 여기에 동적으로 추가됨 -->
+        </div>
+
+        <!-- 드롭 영역 -->
+        <div class="drop-zone" id="dropZone">
+            <div class="drop-zone-icon">📦</div>
+            <div class="drop-zone-text">
+                좌측 사이드바에서 모듈을 드래그하여<br>
+                여기에 놓으세요
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- 삭제 확인 모달 -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+        <div class="modal-icon">⚠️</div>
+        <div class="modal-title">모듈 삭제</div>
+        <div class="modal-text" id="deleteModalText">이 모듈을 삭제하시겠습니까?</div>
+        <div class="modal-buttons">
+            <button class="btn btn-secondary" onclick="closeDeleteModal()">취소</button>
+            <button class="btn btn-primary" style="background:#dc3545;" onclick="confirmDelete()">삭제</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * ========================================
+ * 전역 변수
+ * ========================================
+ */
+
+// 현재 인수인계 문서 ID (URL에서 추출)
+let handoverId = null;
+
+// 현재 문서 데이터
+let handoverData = {
+    title: '',
+    role: '',
+    modules: []
+};
+
+// 삭제할 모듈 ID (모달에서 사용)
+let moduleToDelete = null;
+
+// UserSpace ID (새 문서 생성 시 사용)
+let userSpaceId = null;
+
+/**
+ * ========================================
+ * 초기화 함수
+ * ========================================
+ */
+
+/**
+ * 페이지 로드 시 초기화
+ *
+ * 1. URL에서 ID 추출
+ * 2. 인증 토큰 설정
+ * 3. 기존 문서 또는 새 문서 로드
+ * 4. 드래그 앤 드롭 초기화
+ */
+$(document).ready(function() {
+    // URL에서 ID 추출 (/handover/edit/{id})
+    const pathParts = window.location.pathname.split('/');
+    if (pathParts.length >= 4) {
+        const id = pathParts[3];
+        // ID가 숫자면 문서 ID, 아니면 userSpaceId로 처리
+        if (!isNaN(id)) {
+            handoverId = parseInt(id);
+        }
+    }
+
+    // 인증 토큰 설정
+    setupAuth();
+
+    // 데이터 로드
+    if (handoverId) {
+        loadHandover(handoverId);
+    } else {
+        // 새 문서 - URL 파라미터에서 userSpaceId 확인
+        const urlParams = new URLSearchParams(window.location.search);
+        userSpaceId = urlParams.get('userSpaceId');
+        initEmptyDocument();
+    }
+
+    // 드래그 앤 드롭 초기화
+    initDragAndDrop();
+
+    // 사이드바 더블클릭 이벤트
+    initSidebarEvents();
+});
+
+/**
+ * 인증 토큰 설정
+ *
+ * localStorage의 accessToken을 모든 AJAX 요청에 자동 추가
+ */
+function setupAuth() {
+    let accessToken = localStorage.getItem("accessToken");
+    if (accessToken) {
+        $.ajaxSetup({
+            beforeSend: function(xhr) {
+                if (!accessToken.startsWith("Bearer ")) {
+                    accessToken = "Bearer " + accessToken;
+                }
+                xhr.setRequestHeader("Authorization", accessToken);
+            }
+        });
+    }
+}
+
+/**
+ * ========================================
+ * 데이터 로드/저장 함수
+ * ========================================
+ */
+
+/**
+ * 인수인계 문서 로드
+ *
+ * API를 호출하여 기존 문서를 불러옵니다.
+ *
+ * @param {number} id - 문서 ID
+ */
+function loadHandover(id) {
+    $.ajax({
+        url: '/api/handover',
+        method: 'GET',
+        data: { id: id },
+        success: function(data) {
+            // 브레드크럼 업데이트
+            $('#groupName').text(data.groupName || '그룹');
+            $('#spaceName').text(data.workName || '스페이스');
+            $('#handoverTitle').text(data.title || '인수인계서');
+
+            // 문서 헤더 업데이트
+            $('#documentTitle').text(data.title || '인수인계서');
+            $('#documentSubtitle').text((data.role || '') + ' 업무 인수인계 문서');
+
+            // 모듈 데이터 파싱
+            if (data.text) {
+                try {
+                    handoverData = JSON.parse(data.text);
+                } catch (e) {
+                    console.error('JSON 파싱 오류:', e);
+                    handoverData = { title: data.title, role: data.role, modules: [] };
+                }
+            } else {
+                handoverData = { title: data.title, role: data.role, modules: [] };
+            }
+
+            // 모듈 렌더링
+            renderModules();
+        },
+        error: function(err) {
+            if (err.status === 401 || err.status === 403) {
+                alert("로그인이 필요합니다.");
+                location.href = "/user/login";
+            } else {
+                alert("문서를 불러오는데 실패했습니다.");
+                console.error(err);
+            }
+        }
+    });
+}
+
+/**
+ * 빈 문서 초기화
+ *
+ * 새 인수인계 문서 생성 시 빈 상태로 초기화
+ */
+function initEmptyDocument() {
+    handoverData = {
+        title: '인수인계서',
+        role: '',
+        modules: []
+    };
+    renderModules();
+}
+
+/**
+ * 인수인계 문서 저장
+ *
+ * 현재 편집 중인 내용을 서버에 저장합니다.
+ * - 새 문서: POST /api/handover
+ * - 기존 문서: PUT /api/handover/modules
+ */
+function saveHandover() {
+    // 모듈 데이터 수집
+    collectModuleData();
+
+    const jsonText = JSON.stringify(handoverData);
+
+    if (handoverId) {
+        // 기존 문서 업데이트
+        $.ajax({
+            url: '/api/handover/modules',
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                id: handoverId,
+                text: jsonText
+            }),
+            success: function() {
+                alert("저장되었습니다.");
+            },
+            error: function(err) {
+                alert("저장에 실패했습니다: " + (err.responseText || ''));
+            }
+        });
+    } else {
+        // 새 문서 생성
+        if (!userSpaceId) {
+            alert("UserSpace ID가 필요합니다.");
+            return;
+        }
+
+        $.ajax({
+            url: '/api/handover',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                title: handoverData.title,
+                role: handoverData.role,
+                text: jsonText,
+                userSpaceId: userSpaceId
+            }),
+            success: function(data) {
+                handoverId = data.id;
+                alert("저장되었습니다.");
+                // URL 업데이트
+                history.replaceState(null, '', '/handover/edit/' + handoverId);
+            },
+            error: function(err) {
+                alert("저장에 실패했습니다: " + (err.responseText || ''));
+            }
+        });
+    }
+}
+
+/**
+ * ========================================
+ * 모듈 렌더링 함수
+ * ========================================
+ */
+
+/**
+ * 모든 모듈 렌더링
+ *
+ * handoverData.modules 배열을 기반으로 모듈 카드를 생성합니다.
+ */
+function renderModules() {
+    const container = $('#modulesContainer');
+    container.empty();
+
+    if (handoverData.modules.length === 0) {
+        $('#dropZone').show();
+        return;
+    }
+
+    $('#dropZone').hide();
+
+    handoverData.modules.forEach((module, index) => {
+        const card = createModuleCard(module, index);
+        container.append(card);
+    });
+
+    // Sortable 재초기화
+    initModulesSortable();
+}
+
+/**
+ * 모듈 카드 HTML 생성
+ *
+ * 모듈 타입에 따라 적절한 폼 필드를 포함한 카드를 생성합니다.
+ *
+ * @param {object} module - 모듈 데이터
+ * @param {number} index - 모듈 인덱스
+ * @returns {string} HTML 문자열
+ */
+function createModuleCard(module, index) {
+    const typeInfo = getModuleTypeInfo(module.type);
+    const isCollapsed = module.collapsed || false;
+
+    let html = `
+        <div class="module-card" data-module-id="${module.id}" data-index="${index}">
+            <div class="module-header">
+                <div class="module-header-left">
+                    <span class="drag-handle" title="드래그하여 순서 변경">≡</span>
+                    <span class="module-type-icon">${typeInfo.icon}</span>
+                    <span class="module-type-label">${typeInfo.label}</span>
+                </div>
+                <div class="module-header-right">
+                    <button class="btn-icon" onclick="toggleModule('${module.id}')" title="펼치기/접기">
+                        ${isCollapsed ? '▼' : '▲'}
+                    </button>
+                    <button class="btn-icon btn-delete" onclick="deleteModule('${module.id}')" title="삭제">✕</button>
+                </div>
+            </div>
+            <div class="module-body ${isCollapsed ? 'collapsed' : ''}" id="body-${module.id}">
+                ${getModuleFormFields(module)}
+            </div>
+        </div>
+    `;
+
+    return html;
+}
+
+/**
+ * 모듈 타입 정보 반환
+ *
+ * @param {string} type - 모듈 타입
+ * @returns {object} { icon, label }
+ */
+function getModuleTypeInfo(type) {
+    const types = {
+        'BASIC_INFO': { icon: '📋', label: '기본 정보' },
+        'ACCOUNT_ACCESS': { icon: '🔐', label: '계정 정보' },
+        'TASK': { icon: '📝', label: '업무/과업' },
+        'ASSET_BUDGET': { icon: '💰', label: '자산/예산' },
+        'DOCUMENT_CONTACT': { icon: '📁', label: '문서/연락망' },
+        'RISK': { icon: '⚠️', label: '리스크' }
+    };
+    return types[type] || { icon: '📄', label: '모듈' };
+}
+
+/**
+ * 모듈 타입별 폼 필드 HTML 생성
+ *
+ * 각 모듈 타입에 맞는 입력 필드를 생성합니다.
+ *
+ * @param {object} module - 모듈 데이터
+ * @returns {string} HTML 문자열
+ */
+function getModuleFormFields(module) {
+    const data = module.data || {};
+    const id = module.id;
+
+    switch (module.type) {
+        case 'BASIC_INFO':
+            return `
+                <div class="form-row">
+                    <label class="form-label">인계자 성명</label>
+                    <input type="text" class="form-control" data-field="handoverName" value="${escapeHtml(data.handoverName || '')}">
+                </div>
+                <div class="form-row">
+                    <label class="form-label">소속 / 직급</label>
+                    <input type="text" class="form-control" data-field="affiliation" value="${escapeHtml(data.affiliation || '')}">
+                </div>
+                <div class="form-row-inline">
+                    <div class="form-row">
+                        <label class="form-label">인계 시작일</label>
+                        <input type="date" class="form-control" data-field="periodStart" value="${data.handoverPeriod?.start || ''}">
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">인계 종료일</label>
+                        <input type="date" class="form-control" data-field="periodEnd" value="${data.handoverPeriod?.end || ''}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">비상 연락처</label>
+                    <input type="text" class="form-control" data-field="emergencyContact" value="${escapeHtml(data.emergencyContact || '')}">
+                </div>
+                <div class="form-row">
+                    <label class="form-label">인수자 성명</label>
+                    <input type="text" class="form-control" data-field="receiverName" value="${escapeHtml(data.receiverName || '')}">
+                </div>
+            `;
+
+        case 'ACCOUNT_ACCESS':
+            return `
+                <div class="form-row">
+                    <label class="form-label">시스템 / 사이트명</label>
+                    <input type="text" class="form-control" data-field="systemName" value="${escapeHtml(data.systemName || '')}">
+                </div>
+                <div class="form-row">
+                    <label class="form-label">접속 URL</label>
+                    <input type="url" class="form-control" data-field="accessUrl" value="${escapeHtml(data.accessUrl || '')}">
+                </div>
+                <div class="form-row-inline">
+                    <div class="form-row">
+                        <label class="form-label">ID / 계정명</label>
+                        <input type="text" class="form-control" data-field="accountId" value="${escapeHtml(data.accountId || '')}">
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">비밀번호</label>
+                        <input type="password" class="form-control" data-field="password" value="${escapeHtml(data.password || '')}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">권한 등급</label>
+                    <select class="form-select" data-field="permissionLevel">
+                        <option value="ADMIN" ${data.permissionLevel === 'ADMIN' ? 'selected' : ''}>Admin (최고관리자)</option>
+                        <option value="MANAGER" ${data.permissionLevel === 'MANAGER' ? 'selected' : ''}>Manager (매니저)</option>
+                        <option value="NORMAL" ${data.permissionLevel === 'NORMAL' ? 'selected' : ''}>Normal (일반)</option>
+                        <option value="VIEWER" ${data.permissionLevel === 'VIEWER' ? 'selected' : ''}>Viewer (뷰어)</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">이용 규칙</label>
+                    <textarea class="form-control" data-field="usageRule">${escapeHtml(data.usageRule || '')}</textarea>
+                </div>
+            `;
+
+        case 'TASK':
+            return `
+                <div class="form-row">
+                    <label class="form-label">업무명</label>
+                    <input type="text" class="form-control" data-field="taskName" value="${escapeHtml(data.taskName || '')}">
+                </div>
+                <div class="form-row-inline">
+                    <div class="form-row">
+                        <label class="form-label">업무 유형</label>
+                        <select class="form-select" data-field="taskType">
+                            <option value="ROUTINE" ${data.taskType === 'ROUTINE' ? 'selected' : ''}>정기 루틴</option>
+                            <option value="EVENT" ${data.taskType === 'EVENT' ? 'selected' : ''}>비정기 이벤트</option>
+                            <option value="PROJECT" ${data.taskType === 'PROJECT' ? 'selected' : ''}>일회성 프로젝트</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">중요도</label>
+                        <select class="form-select" data-field="importance">
+                            <option value="CRITICAL" ${data.importance === 'CRITICAL' ? 'selected' : ''}>🔥 Critical</option>
+                            <option value="HIGH" ${data.importance === 'HIGH' ? 'selected' : ''}>High</option>
+                            <option value="MEDIUM" ${data.importance === 'MEDIUM' ? 'selected' : ''}>Medium</option>
+                            <option value="LOW" ${data.importance === 'LOW' ? 'selected' : ''}>Low</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row-inline">
+                    <div class="form-row">
+                        <label class="form-label">수행 주기 / 시점</label>
+                        <input type="text" class="form-control" data-field="schedule" value="${escapeHtml(data.schedule || '')}">
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">소요 시간</label>
+                        <input type="text" class="form-control" data-field="duration" value="${escapeHtml(data.duration || '')}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">상세 절차</label>
+                    <textarea class="form-control" data-field="procedure" style="min-height:120px;">${escapeHtml(data.procedure || '')}</textarea>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">트러블슈팅</label>
+                    <textarea class="form-control" data-field="troubleshooting">${escapeHtml(data.troubleshooting || '')}</textarea>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">현재 상태</label>
+                    <select class="form-select" data-field="status">
+                        <option value="NORMAL" ${data.status === 'NORMAL' ? 'selected' : ''}>✅ 정상 운영</option>
+                        <option value="ISSUE" ${data.status === 'ISSUE' ? 'selected' : ''}>⚠️ 이슈 있음</option>
+                        <option value="PAUSED" ${data.status === 'PAUSED' ? 'selected' : ''}>⏸️ 일시 중단</option>
+                        <option value="HANDOVER" ${data.status === 'HANDOVER' ? 'selected' : ''}>🔄 인계 중</option>
+                    </select>
+                </div>
+            `;
+
+        case 'ASSET_BUDGET':
+            return `
+                <div class="form-row">
+                    <label class="form-label">품목명 / 비용 항목</label>
+                    <input type="text" class="form-control" data-field="itemName" value="${escapeHtml(data.itemName || '')}">
+                </div>
+                <div class="form-row-inline">
+                    <div class="form-row">
+                        <label class="form-label">보관 위치 / 결제일</label>
+                        <input type="text" class="form-control" data-field="location" value="${escapeHtml(data.location || '')}">
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">수량 / 금액</label>
+                        <input type="text" class="form-control" data-field="quantity" value="${escapeHtml(data.quantity || '')}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">관련 장부 / 링크</label>
+                    <input type="text" class="form-control" data-field="ledgerLink" value="${escapeHtml(data.ledgerLink || '')}">
+                </div>
+            `;
+
+        case 'DOCUMENT_CONTACT':
+            return `
+                <div class="form-row">
+                    <label class="form-label">문서 제목 / 이름</label>
+                    <input type="text" class="form-control" data-field="docTitle" value="${escapeHtml(data.docTitle || data.personName || '')}">
+                </div>
+                <div class="form-row-inline">
+                    <div class="form-row">
+                        <label class="form-label">유형 / 소속</label>
+                        <input type="text" class="form-control" data-field="docType" value="${escapeHtml(data.docType || data.organization || '')}">
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">보관 형태 / 연락처</label>
+                        <input type="text" class="form-control" data-field="storageType" value="${escapeHtml(data.storageType || data.contact || '')}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">위치 / 역할</label>
+                    <input type="text" class="form-control" data-field="docLocation" value="${escapeHtml(data.docLocation || data.role || '')}">
+                </div>
+            `;
+
+        case 'RISK':
+            return `
+                <div class="form-row">
+                    <label class="form-label">리스크 제목</label>
+                    <input type="text" class="form-control" data-field="riskTitle" value="${escapeHtml(data.riskTitle || '')}">
+                </div>
+                <div class="form-row">
+                    <label class="form-label">리스크 설명</label>
+                    <textarea class="form-control" data-field="riskDescription">${escapeHtml(data.riskDescription || '')}</textarea>
+                </div>
+                <div class="form-row-inline">
+                    <div class="form-row">
+                        <label class="form-label">영향도</label>
+                        <select class="form-select" data-field="impact">
+                            <option value="HIGH" ${data.impact === 'HIGH' ? 'selected' : ''}>🔴 High</option>
+                            <option value="MEDIUM" ${data.impact === 'MEDIUM' ? 'selected' : ''}>🟡 Medium</option>
+                            <option value="LOW" ${data.impact === 'LOW' ? 'selected' : ''}>🟢 Low</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">발생 조건</label>
+                        <input type="text" class="form-control" data-field="triggerCondition" value="${escapeHtml(data.triggerCondition || '')}">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">즉각 대응 방법</label>
+                    <textarea class="form-control" data-field="immediateResponse">${escapeHtml(data.immediateResponse || '')}</textarea>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">사전 예방 방법</label>
+                    <textarea class="form-control" data-field="prevention">${escapeHtml(data.prevention || '')}</textarea>
+                </div>
+            `;
+
+        default:
+            return '<p>알 수 없는 모듈 타입입니다.</p>';
+    }
+}
+
+/**
+ * ========================================
+ * 드래그 앤 드롭 함수
+ * ========================================
+ */
+
+/**
+ * 드래그 앤 드롭 초기화
+ *
+ * - 사이드바 모듈: 복사하여 메인 영역에 추가
+ * - 메인 영역 모듈: 순서 변경
+ */
+function initDragAndDrop() {
+    // 사이드바 드래그 (복사 모드)
+    new Sortable(document.getElementById('modulePalette'), {
+        group: {
+            name: 'modules',
+            pull: 'clone',
+            put: false
+        },
+        sort: false,
+        animation: 150
+    });
+
+    // 드롭 영역 설정
+    const dropZone = document.getElementById('dropZone');
+    dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', function() {
+        this.classList.remove('drag-over');
+    });
+    dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('drag-over');
+    });
+
+    // 메인 영역 정렬
+    initModulesSortable();
+}
+
+/**
+ * 모듈 컨테이너 Sortable 초기화
+ */
+function initModulesSortable() {
+    const container = document.getElementById('modulesContainer');
+    if (container.sortableInstance) {
+        container.sortableInstance.destroy();
+    }
+
+    container.sortableInstance = new Sortable(container, {
+        group: 'modules',
+        handle: '.drag-handle',
+        animation: 150,
+        ghostClass: 'dragging',
+        onAdd: function(evt) {
+            // 사이드바에서 드롭된 경우
+            const type = evt.item.dataset.type;
+            if (type) {
+                // 사이드바 아이템 제거하고 실제 모듈 추가
+                evt.item.remove();
+                addModule(type, evt.newIndex);
+            }
+        },
+        onEnd: function(evt) {
+            // 순서 변경
+            updateModuleOrder();
+        }
+    });
+}
+
+/**
+ * 사이드바 이벤트 초기화
+ *
+ * 더블클릭 시 모듈 추가
+ */
+function initSidebarEvents() {
+    $('.module-item').on('dblclick', function() {
+        const type = $(this).data('type');
+        addModule(type);
+    });
+}
+
+/**
+ * ========================================
+ * 모듈 관리 함수
+ * ========================================
+ */
+
+/**
+ * 새 모듈 추가
+ *
+ * @param {string} type - 모듈 타입
+ * @param {number} index - 삽입 위치 (선택, 기본값: 마지막)
+ */
+function addModule(type, index) {
+    const newModule = {
+        id: generateUUID(),
+        type: type,
+        order: handoverData.modules.length,
+        data: {}
+    };
+
+    if (typeof index === 'number') {
+        handoverData.modules.splice(index, 0, newModule);
+    } else {
+        handoverData.modules.push(newModule);
+    }
+
+    updateModuleOrder();
+    renderModules();
+}
+
+/**
+ * 모듈 삭제 (모달 표시)
+ *
+ * @param {string} moduleId - 삭제할 모듈 ID
+ */
+function deleteModule(moduleId) {
+    moduleToDelete = moduleId;
+    const module = handoverData.modules.find(m => m.id === moduleId);
+    const typeInfo = getModuleTypeInfo(module?.type);
+    $('#deleteModalText').text(`"${typeInfo.label}" 모듈을 삭제하시겠습니까?`);
+    $('#deleteModal').addClass('active');
+}
+
+/**
+ * 삭제 확인
+ */
+function confirmDelete() {
+    if (moduleToDelete) {
+        handoverData.modules = handoverData.modules.filter(m => m.id !== moduleToDelete);
+        updateModuleOrder();
+        renderModules();
+        moduleToDelete = null;
+    }
+    closeDeleteModal();
+}
+
+/**
+ * 삭제 모달 닫기
+ */
+function closeDeleteModal() {
+    $('#deleteModal').removeClass('active');
+    moduleToDelete = null;
+}
+
+/**
+ * 모듈 펼치기/접기 토글
+ *
+ * @param {string} moduleId - 모듈 ID
+ */
+function toggleModule(moduleId) {
+    const body = $(`#body-${moduleId}`);
+    const module = handoverData.modules.find(m => m.id === moduleId);
+
+    if (body.hasClass('collapsed')) {
+        body.removeClass('collapsed');
+        module.collapsed = false;
+    } else {
+        body.addClass('collapsed');
+        module.collapsed = true;
+    }
+}
+
+/**
+ * 모듈 순서 업데이트
+ *
+ * DOM 순서에 따라 modules 배열의 order 값을 업데이트
+ */
+function updateModuleOrder() {
+    const container = document.getElementById('modulesContainer');
+    const cards = container.querySelectorAll('.module-card');
+
+    const newOrder = [];
+    cards.forEach((card, idx) => {
+        const moduleId = card.dataset.moduleId;
+        const module = handoverData.modules.find(m => m.id === moduleId);
+        if (module) {
+            module.order = idx;
+            newOrder.push(module);
+        }
+    });
+
+    // 순서대로 정렬
+    handoverData.modules.sort((a, b) => a.order - b.order);
+}
+
+/**
+ * 모든 모듈의 입력 데이터 수집
+ *
+ * 저장 전 각 모듈 카드의 입력값을 handoverData에 반영
+ */
+function collectModuleData() {
+    handoverData.modules.forEach(module => {
+        const card = $(`.module-card[data-module-id="${module.id}"]`);
+        const inputs = card.find('[data-field]');
+
+        inputs.each(function() {
+            const field = $(this).data('field');
+            const value = $(this).val();
+
+            // 특수 필드 처리 (날짜 범위)
+            if (field === 'periodStart' || field === 'periodEnd') {
+                if (!module.data.handoverPeriod) {
+                    module.data.handoverPeriod = {};
+                }
+                if (field === 'periodStart') {
+                    module.data.handoverPeriod.start = value;
+                } else {
+                    module.data.handoverPeriod.end = value;
+                }
+            } else {
+                module.data[field] = value;
+            }
+        });
+    });
+}
+
+/**
+ * ========================================
+ * 유틸리티 함수
+ * ========================================
+ */
+
+/**
+ * UUID 생성
+ *
+ * @returns {string} UUID 문자열
+ */
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+/**
+ * HTML 이스케이프
+ *
+ * XSS 방지를 위해 특수문자를 이스케이프
+ *
+ * @param {string} text - 원본 텍스트
+ * @returns {string} 이스케이프된 텍스트
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+/**
+ * 미리보기 (새 탭에서 열기)
+ */
+function previewHandover() {
+    if (handoverId) {
+        window.open('/handover/view/' + handoverId, '_blank');
+    } else {
+        alert("먼저 저장해주세요.");
+    }
+}
+</script>
+
+</body>
+</html>

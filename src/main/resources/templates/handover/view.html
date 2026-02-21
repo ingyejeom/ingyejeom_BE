@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인수인계서 보기</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        /* ========================================
+           기본 스타일
+           ======================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        /* ========================================
+           헤더 스타일
+           ======================================== */
+        .header {
+            background: white;
+            padding: 15px 30px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        /* ========================================
+           메인 콘텐츠
+           ======================================== */
+        .content {
+            max-width: 800px;
+            margin: 80px auto 40px;
+            padding: 0 20px;
+        }
+
+        /* 문서 헤더 */
+        .document-header {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        .document-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .document-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .document-meta {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            font-size: 13px;
+            color: #888;
+        }
+
+        /* ========================================
+           모듈 카드 스타일 (읽기 전용)
+           ======================================== */
+        .module-card {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .module-header {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .module-type-icon {
+            font-size: 20px;
+        }
+
+        .module-type-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .module-body {
+            padding: 20px;
+        }
+
+        /* 필드 스타일 */
+        .field-row {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .field-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .field-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .field-value {
+            font-size: 15px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .field-value.empty {
+            color: #ccc;
+            font-style: italic;
+        }
+
+        .field-value a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .field-value a:hover {
+            text-decoration: underline;
+        }
+
+        .field-row-inline {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* 태그/상태 스타일 */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .status-normal { background: #d4edda; color: #155724; }
+        .status-issue { background: #fff3cd; color: #856404; }
+        .status-paused { background: #e2e3e5; color: #383d41; }
+        .status-handover { background: #cce5ff; color: #004085; }
+
+        .importance-critical { background: #f8d7da; color: #721c24; }
+        .importance-high { background: #fff3cd; color: #856404; }
+        .importance-medium { background: #d4edda; color: #155724; }
+        .importance-low { background: #e2e3e5; color: #383d41; }
+
+        /* 절차 스타일 */
+        .procedure-content {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: inherit;
+            line-height: 1.8;
+        }
+
+        /* ========================================
+           빈 상태
+           ======================================== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .empty-state-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state-text {
+            font-size: 16px;
+            color: #666;
+        }
+
+        /* 인쇄 스타일 */
+        @media print {
+            .header { display: none; }
+            .content { margin-top: 0; }
+            .module-card { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========================================
+     헤더
+     ======================================== -->
+<header class="header">
+    <nav class="breadcrumb">
+        <a href="/space/list">🏠 내 스페이스</a>
+        <span>></span>
+        <span id="groupName">그룹명</span>
+        <span>></span>
+        <span id="spaceName">스페이스명</span>
+        <span>></span>
+        <span id="handoverTitle">인수인계서</span>
+    </nav>
+    <div class="header-buttons">
+        <button class="btn btn-secondary" onclick="window.print()">🖨️ 인쇄</button>
+        <a href="#" class="btn btn-primary" id="editBtn">✏️ 편집</a>
+    </div>
+</header>
+
+<!-- ========================================
+     메인 콘텐츠
+     ======================================== -->
+<main class="content">
+    <!-- 문서 헤더 -->
+    <div class="document-header">
+        <div class="document-title" id="documentTitle">인수인계서</div>
+        <div class="document-subtitle" id="documentSubtitle">업무 인수인계 문서</div>
+        <div class="document-meta">
+            <span>📅 작성일: <span id="createdAt">-</span></span>
+            <span>👤 작성자: <span id="userName">-</span></span>
+        </div>
+    </div>
+
+    <!-- 모듈 컨테이너 -->
+    <div id="modulesContainer">
+        <!-- 모듈 카드들이 여기에 동적으로 추가됨 -->
+    </div>
+</main>
+
+<script>
+/**
+ * ========================================
+ * 전역 변수
+ * ========================================
+ */
+
+// 현재 인수인계 문서 ID
+let handoverId = null;
+
+/**
+ * ========================================
+ * 초기화 함수
+ * ========================================
+ */
+
+/**
+ * 페이지 로드 시 초기화
+ */
+$(document).ready(function() {
+    // URL에서 ID 추출
+    const pathParts = window.location.pathname.split('/');
+    if (pathParts.length >= 4) {
+        handoverId = parseInt(pathParts[3]);
+    }
+
+    if (!handoverId) {
+        alert("문서 ID가 필요합니다.");
+        return;
+    }
+
+    // 인증 설정
+    setupAuth();
+
+    // 편집 버튼 링크 설정
+    $('#editBtn').attr('href', '/handover/edit/' + handoverId);
+
+    // 데이터 로드
+    loadHandover();
+});
+
+/**
+ * 인증 토큰 설정
+ */
+function setupAuth() {
+    let accessToken = localStorage.getItem("accessToken");
+    if (accessToken) {
+        $.ajaxSetup({
+            beforeSend: function(xhr) {
+                if (!accessToken.startsWith("Bearer ")) {
+                    accessToken = "Bearer " + accessToken;
+                }
+                xhr.setRequestHeader("Authorization", accessToken);
+            }
+        });
+    }
+}
+
+/**
+ * ========================================
+ * 데이터 로드 함수
+ * ========================================
+ */
+
+/**
+ * 인수인계 문서 로드
+ */
+function loadHandover() {
+    $.ajax({
+        url: '/api/handover',
+        method: 'GET',
+        data: { id: handoverId },
+        success: function(data) {
+            renderDocument(data);
+        },
+        error: function(err) {
+            if (err.status === 401 || err.status === 403) {
+                alert("로그인이 필요합니다.");
+                location.href = "/user/login";
+            } else {
+                alert("문서를 불러오는데 실패했습니다.");
+            }
+        }
+    });
+}
+
+/**
+ * 문서 렌더링
+ *
+ * @param {Object} data - API 응답 데이터
+ */
+function renderDocument(data) {
+    // 브레드크럼 업데이트
+    $('#groupName').text(data.groupName || '그룹');
+    $('#spaceName').text(data.workName || '스페이스');
+    $('#handoverTitle').text(data.title || '인수인계서');
+
+    // 문서 헤더 업데이트
+    $('#documentTitle').text(data.title || '인수인계서');
+    $('#documentSubtitle').text((data.role || '') + ' 업무 인수인계 문서');
+    $('#createdAt').text(data.createdAt ? new Date(data.createdAt).toLocaleDateString('ko-KR') : '-');
+    $('#userName').text(data.userName || '-');
+
+    // 모듈 데이터 파싱 및 렌더링
+    let modules = [];
+    if (data.text) {
+        try {
+            const parsed = JSON.parse(data.text);
+            modules = parsed.modules || [];
+        } catch (e) {
+            console.error('JSON 파싱 오류:', e);
+        }
+    }
+
+    renderModules(modules);
+}
+
+/**
+ * ========================================
+ * 모듈 렌더링 함수
+ * ========================================
+ */
+
+/**
+ * 모든 모듈 렌더링
+ *
+ * @param {Array} modules - 모듈 배열
+ */
+function renderModules(modules) {
+    const container = $('#modulesContainer');
+    container.empty();
+
+    if (modules.length === 0) {
+        container.html(`
+            <div class="empty-state">
+                <div class="empty-state-icon">📄</div>
+                <div class="empty-state-text">아직 작성된 내용이 없습니다.</div>
+            </div>
+        `);
+        return;
+    }
+
+    modules.forEach(function(module) {
+        const card = createModuleCard(module);
+        container.append(card);
+    });
+}
+
+/**
+ * 모듈 카드 HTML 생성 (읽기 전용)
+ *
+ * @param {Object} module - 모듈 데이터
+ * @returns {string} HTML 문자열
+ */
+function createModuleCard(module) {
+    const typeInfo = getModuleTypeInfo(module.type);
+    const fieldsHtml = getModuleFieldsHtml(module);
+
+    return `
+        <div class="module-card">
+            <div class="module-header">
+                <span class="module-type-icon">${typeInfo.icon}</span>
+                <span class="module-type-label">${typeInfo.label}</span>
+            </div>
+            <div class="module-body">
+                ${fieldsHtml}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * 모듈 타입 정보 반환
+ *
+ * @param {string} type - 모듈 타입
+ * @returns {Object} { icon, label }
+ */
+function getModuleTypeInfo(type) {
+    const types = {
+        'BASIC_INFO': { icon: '📋', label: '기본 정보' },
+        'ACCOUNT_ACCESS': { icon: '🔐', label: '계정 정보' },
+        'TASK': { icon: '📝', label: '업무/과업' },
+        'ASSET_BUDGET': { icon: '💰', label: '자산/예산' },
+        'DOCUMENT_CONTACT': { icon: '📁', label: '문서/연락망' },
+        'RISK': { icon: '⚠️', label: '리스크' }
+    };
+    return types[type] || { icon: '📄', label: '모듈' };
+}
+
+/**
+ * 모듈 타입별 필드 HTML 생성 (읽기 전용)
+ *
+ * @param {Object} module - 모듈 데이터
+ * @returns {string} HTML 문자열
+ */
+function getModuleFieldsHtml(module) {
+    const data = module.data || {};
+
+    switch (module.type) {
+        case 'BASIC_INFO':
+            return `
+                <div class="field-row">
+                    <div class="field-label">인계자 성명</div>
+                    <div class="field-value ${!data.handoverName ? 'empty' : ''}">${escapeHtml(data.handoverName) || '미입력'}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">소속 / 직급</div>
+                    <div class="field-value ${!data.affiliation ? 'empty' : ''}">${escapeHtml(data.affiliation) || '미입력'}</div>
+                </div>
+                <div class="field-row-inline">
+                    <div class="field-row">
+                        <div class="field-label">인계 기간</div>
+                        <div class="field-value">${data.handoverPeriod?.start || '-'} ~ ${data.handoverPeriod?.end || '-'}</div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">비상 연락처</div>
+                        <div class="field-value ${!data.emergencyContact ? 'empty' : ''}">${escapeHtml(data.emergencyContact) || '미입력'}</div>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">인수자 성명</div>
+                    <div class="field-value ${!data.receiverName ? 'empty' : ''}">${escapeHtml(data.receiverName) || '미입력'}</div>
+                </div>
+            `;
+
+        case 'ACCOUNT_ACCESS':
+            return `
+                <div class="field-row">
+                    <div class="field-label">시스템 / 사이트명</div>
+                    <div class="field-value">${escapeHtml(data.systemName) || '-'}</div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">접속 URL</div>
+                    <div class="field-value">${data.accessUrl ? `<a href="${escapeHtml(data.accessUrl)}" target="_blank">${escapeHtml(data.accessUrl)}</a>` : '-'}</div>
+                </div>
+                <div class="field-row-inline">
+                    <div class="field-row">
+                        <div class="field-label">ID / 계정명</div>
+                        <div class="field-value">${escapeHtml(data.accountId) || '-'}</div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">권한 등급</div>
+                        <div class="field-value">${getPermissionLabel(data.permissionLevel)}</div>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">이용 규칙</div>
+                    <div class="field-value ${!data.usageRule ? 'empty' : ''}">${escapeHtml(data.usageRule) || '없음'}</div>
+                </div>
+            `;
+
+        case 'TASK':
+            return `
+                <div class="field-row">
+                    <div class="field-label">업무명</div>
+                    <div class="field-value" style="font-size:18px;font-weight:600;">${escapeHtml(data.taskName) || '-'}</div>
+                </div>
+                <div class="field-row-inline">
+                    <div class="field-row">
+                        <div class="field-label">업무 유형</div>
+                        <div class="field-value">${getTaskTypeLabel(data.taskType)}</div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">중요도</div>
+                        <div class="field-value"><span class="status-badge ${getImportanceClass(data.importance)}">${getImportanceLabel(data.importance)}</span></div>
+                    </div>
+                </div>
+                <div class="field-row-inline">
+                    <div class="field-row">
+                        <div class="field-label">수행 주기</div>
+                        <div class="field-value">${escapeHtml(data.schedule) || '-'}</div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">소요 시간</div>
+                        <div class="field-value">${escapeHtml(data.duration) || '-'}</div>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">현재 상태</div>
+                    <div class="field-value"><span class="status-badge ${getStatusClass(data.status)}">${getStatusLabel(data.status)}</span></div>
+                </div>
+                ${data.procedure ? `
+                <div class="field-row">
+                    <div class="field-label">상세 절차</div>
+                    <div class="procedure-content">${escapeHtml(data.procedure)}</div>
+                </div>
+                ` : ''}
+                ${data.troubleshooting ? `
+                <div class="field-row">
+                    <div class="field-label">트러블슈팅</div>
+                    <div class="field-value">${escapeHtml(data.troubleshooting)}</div>
+                </div>
+                ` : ''}
+            `;
+
+        case 'ASSET_BUDGET':
+            return `
+                <div class="field-row">
+                    <div class="field-label">품목명 / 비용 항목</div>
+                    <div class="field-value">${escapeHtml(data.itemName) || '-'}</div>
+                </div>
+                <div class="field-row-inline">
+                    <div class="field-row">
+                        <div class="field-label">보관 위치 / 결제일</div>
+                        <div class="field-value">${escapeHtml(data.location) || '-'}</div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">수량 / 금액</div>
+                        <div class="field-value">${escapeHtml(data.quantity) || '-'}</div>
+                    </div>
+                </div>
+                ${data.ledgerLink ? `
+                <div class="field-row">
+                    <div class="field-label">관련 장부</div>
+                    <div class="field-value"><a href="${escapeHtml(data.ledgerLink)}" target="_blank">링크 열기</a></div>
+                </div>
+                ` : ''}
+            `;
+
+        case 'DOCUMENT_CONTACT':
+            return `
+                <div class="field-row">
+                    <div class="field-label">문서 제목 / 이름</div>
+                    <div class="field-value">${escapeHtml(data.docTitle || data.personName) || '-'}</div>
+                </div>
+                <div class="field-row-inline">
+                    <div class="field-row">
+                        <div class="field-label">유형 / 소속</div>
+                        <div class="field-value">${escapeHtml(data.docType || data.organization) || '-'}</div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">보관 형태 / 연락처</div>
+                        <div class="field-value">${escapeHtml(data.storageType || data.contact) || '-'}</div>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-label">위치 / 역할</div>
+                    <div class="field-value">${escapeHtml(data.docLocation || data.role) || '-'}</div>
+                </div>
+            `;
+
+        case 'RISK':
+            return `
+                <div class="field-row">
+                    <div class="field-label">리스크 제목</div>
+                    <div class="field-value" style="font-size:18px;font-weight:600;">${escapeHtml(data.riskTitle) || '-'}</div>
+                </div>
+                <div class="field-row-inline">
+                    <div class="field-row">
+                        <div class="field-label">영향도</div>
+                        <div class="field-value"><span class="status-badge ${getImpactClass(data.impact)}">${getImpactLabel(data.impact)}</span></div>
+                    </div>
+                    <div class="field-row">
+                        <div class="field-label">발생 조건</div>
+                        <div class="field-value">${escapeHtml(data.triggerCondition) || '-'}</div>
+                    </div>
+                </div>
+                ${data.riskDescription ? `
+                <div class="field-row">
+                    <div class="field-label">리스크 설명</div>
+                    <div class="field-value">${escapeHtml(data.riskDescription)}</div>
+                </div>
+                ` : ''}
+                ${data.immediateResponse ? `
+                <div class="field-row">
+                    <div class="field-label">즉각 대응 방법</div>
+                    <div class="field-value">${escapeHtml(data.immediateResponse)}</div>
+                </div>
+                ` : ''}
+                ${data.prevention ? `
+                <div class="field-row">
+                    <div class="field-label">사전 예방 방법</div>
+                    <div class="field-value">${escapeHtml(data.prevention)}</div>
+                </div>
+                ` : ''}
+            `;
+
+        default:
+            return '<p>알 수 없는 모듈 타입입니다.</p>';
+    }
+}
+
+/**
+ * ========================================
+ * 유틸리티 함수
+ * ========================================
+ */
+
+/**
+ * HTML 이스케이프
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return text.toString().replace(/[&<>"']/g, m => map[m]);
+}
+
+/**
+ * 권한 등급 라벨
+ */
+function getPermissionLabel(level) {
+    const labels = { 'ADMIN': 'Admin (최고관리자)', 'MANAGER': 'Manager', 'NORMAL': 'Normal', 'VIEWER': 'Viewer' };
+    return labels[level] || level || '-';
+}
+
+/**
+ * 업무 유형 라벨
+ */
+function getTaskTypeLabel(type) {
+    const labels = { 'ROUTINE': '정기 루틴', 'EVENT': '비정기 이벤트', 'PROJECT': '일회성 프로젝트' };
+    return labels[type] || type || '-';
+}
+
+/**
+ * 중요도 라벨 및 클래스
+ */
+function getImportanceLabel(level) {
+    const labels = { 'CRITICAL': '🔥 Critical', 'HIGH': 'High', 'MEDIUM': 'Medium', 'LOW': 'Low' };
+    return labels[level] || level || '-';
+}
+
+function getImportanceClass(level) {
+    const classes = { 'CRITICAL': 'importance-critical', 'HIGH': 'importance-high', 'MEDIUM': 'importance-medium', 'LOW': 'importance-low' };
+    return classes[level] || '';
+}
+
+/**
+ * 상태 라벨 및 클래스
+ */
+function getStatusLabel(status) {
+    const labels = { 'NORMAL': '✅ 정상 운영', 'ISSUE': '⚠️ 이슈 있음', 'PAUSED': '⏸️ 일시 중단', 'HANDOVER': '🔄 인계 중' };
+    return labels[status] || status || '-';
+}
+
+function getStatusClass(status) {
+    const classes = { 'NORMAL': 'status-normal', 'ISSUE': 'status-issue', 'PAUSED': 'status-paused', 'HANDOVER': 'status-handover' };
+    return classes[status] || '';
+}
+
+/**
+ * 영향도 라벨 및 클래스
+ */
+function getImpactLabel(impact) {
+    const labels = { 'HIGH': '🔴 High', 'MEDIUM': '🟡 Medium', 'LOW': '🟢 Low' };
+    return labels[impact] || impact || '-';
+}
+
+function getImpactClass(impact) {
+    const classes = { 'HIGH': 'importance-critical', 'MEDIUM': 'importance-high', 'LOW': 'importance-low' };
+    return classes[impact] || '';
+}
+</script>
+
+</body>
+</html>
