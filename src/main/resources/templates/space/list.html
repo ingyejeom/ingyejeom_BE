@@ -37,6 +37,10 @@
         /* 입장 버튼 */
         .btn-enter { padding: 8px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
         .btn-enter:hover { background-color: #0056b3; }
+
+        /* 인수인계 버튼 - 해당 스페이스의 인수인계 목록으로 이동 */
+        .btn-handover { padding: 8px 15px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn-handover:hover { background-color: #218838; }
     </style>
 </head>
 <body>
@@ -114,6 +118,7 @@
                             <div class="card-bottom">
                                 <button class="btn-enter" onclick="goFileDetail(${us.spaceId})">파일</button>
                                 <button class="btn-enter" onclick="goSpaceDetail(${us.spaceId})">입장</button>
+                                <button class="btn-handover" onclick="goHandover(${us.id})">인수인계</button>
                                 <button class="btn-invite" onclick="requestInvite(${us.spaceId})">초대</button>
                             </div>
                         </div>
@@ -138,6 +143,11 @@
 
     function goFileDetail(spaceId) {
         location.href = '/space/fileList/' + spaceId;
+    }
+
+    // 해당 userSpace의 인수인계 생성/편집 페이지로 이동 (이미 존재하면 edit으로 리다이렉트)
+    function goHandover(userSpaceId) {
+        location.href = '/handover/create/' + userSpaceId;
     }
 
     function requestInvite(spaceId) {
