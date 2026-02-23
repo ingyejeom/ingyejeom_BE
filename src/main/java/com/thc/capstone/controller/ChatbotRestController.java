@@ -9,6 +9,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 @RequestMapping("/api/chatbot")
 @RestController
@@ -26,5 +28,13 @@ public class ChatbotRestController {
     @PostMapping("")
     public ResponseEntity<ChatbotDto.ChatResDto> askChatbot(@RequestBody ChatbotDto.ChatReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         return ResponseEntity.ok(chatbotService.askChatbot(param, getUserId(principalDetails)));
+    }
+
+    @GetMapping("/history/{spaceId}")
+    public ResponseEntity<List<ChatbotDto.HistoryResDto>> getChatHistory(@PathVariable("spaceId") Long spaceId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+
+        List<ChatbotDto.HistoryResDto> history = chatbotService.getHistory(spaceId, getUserId(principalDetails));
+        return ResponseEntity.ok(history);
+
     }
 }
