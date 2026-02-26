@@ -10,10 +10,19 @@ public class ChatbotDto {
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class ChatReqDto {
         private String question;
+        private Long spaceId;
     }
 
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class ChatResDto {
         private String answer;
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
+    public static class HistoryResDto {
+        private Long id;
+        private String question;
+        private String answer;
+        private String createdAt;
     }
 }

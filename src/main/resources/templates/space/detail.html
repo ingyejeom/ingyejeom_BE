@@ -181,6 +181,7 @@
         }
 
         loadSpaceDetail();
+        loadChatHistory();
 
         // Enter 전송 / Shift+Enter 줄바꿈
         $("#questionInput").on("keydown", function (e) {
@@ -242,10 +243,11 @@
             method: "POST",
             contentType: "application/json",
             data: JSON.stringify({
-                question: q
+                question: q,
+
                 // MVP에서는 spaceId를 안 보내도 되지만,
                 // 나중에 필터링 필요하면 서버에서 받도록 추가 가능:
-                // spaceId: spaceId
+                spaceId: spaceId
             }),
             success: function (data) {
                 // data.answer 기대
@@ -302,6 +304,27 @@
             },
             error: function () {
                 alert("삭제에 실패했습니다. (권한이 없거나 오류 발생)");
+            }
+        });
+    }
+
+    // 이전 채팅 기록 가져오기
+    function loadChatHistory() {
+        $.ajax({
+            url: `/api/chatbot/history/${spaceId}`,
+            method: 'GET',
+            success: function (data) {
+                if (data && data.length > 0) {
+                    // $("#chatLog").empty();
+
+                    data.forEach(function (chat) {
+                        appendMessage("user", chat.question);
+                        appendMessage("bot", chat.answer);
+                    });
+                }
+            },
+            error: function (xhr) {
+                console.error("채팅 내역을 불러오는데 실패했습니다.", xhr);
             }
         });
     }
