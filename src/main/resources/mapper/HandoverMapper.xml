@@ -15,6 +15,7 @@
             h.role,
             h.text,
             h.user_space_id AS userSpaceId,
+            us.space_id AS spaceId,
             s.work_name AS workName,
             g.group_name AS groupName,
             u.name AS userName

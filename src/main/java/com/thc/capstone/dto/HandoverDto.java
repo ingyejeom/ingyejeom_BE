@@ -61,6 +61,7 @@ public class HandoverDto {
         private String role;        // 역할명
         private String text;        // 인수인계 내용 (JSON)
         private Long userSpaceId;   // UserSpace ID
+        private Long spaceId;       // Space ID (파일 업로드용)
         private String workName;    // 스페이스 이름 (DB에서 JOIN해서 가져옴)
         private String groupName;   // 그룹 이름 (DB에서 JOIN해서 가져옴)
         private String userName;    // 작성자 이름 (DB에서 JOIN해서 가져옴)
