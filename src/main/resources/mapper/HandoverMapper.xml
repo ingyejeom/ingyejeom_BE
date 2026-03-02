@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0/EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.thc.capstone.mapper.HandoverMapper">
+
+    <!-- 인수인계 문서 1개 상세 조회 (스페이스명, 그룹명, 작성자명 포함) -->
+    <select id="detail" parameterType="Long"
+            resultType="com.thc.capstone.dto.HandoverDto$DetailResDto">
+        SELECT
+            h.id,
+            h.deleted,
+            h.created_at AS createdAt,
+            h.modified_at AS modifiedAt,
+            h.title,
+            h.role,
+            h.text,
+            h.user_space_id AS userSpaceId,
+            us.space_id AS spaceId,
+            s.work_name AS workName,
+            g.group_name AS groupName,
+            u.name AS userName
+        FROM handover h
+        LEFT JOIN user_space us ON h.user_space_id = us.id
+        LEFT JOIN space s ON us.space_id = s.id
+        LEFT JOIN tb_group g ON s.group_id = g.id
+        LEFT JOIN user u ON us.user_id = u.id
+        WHERE h.id = #{id}
+    </select>
+
+    <!-- 특정 스페이스의 모든 인수인계 문서 목록 조회 -->
+    <select id="listBySpaceId" parameterType="Long"
+            resultType="com.thc.capstone.dto.HandoverDto$DetailResDto">
+        SELECT
+            h.id,
+            h.title,
+            h.role,
+            h.user_space_id AS userSpaceId,
+            h.created_at AS createdAt,
+            u.name AS userName
+        FROM handover h
+        INNER JOIN user_space us ON h.user_space_id = us.id
+        LEFT JOIN user u ON us.user_id = u.id
+        WHERE us.space_id = #{spaceId}
+          AND h.deleted = false
+        ORDER BY h.created_at DESC
+    </select>
+
+</mapper>
