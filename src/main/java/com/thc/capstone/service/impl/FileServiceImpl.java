@@ -44,21 +44,26 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional
-    public void upload(FileDto.UploadReqDto param, Long reqUserId) {
+    public String upload(FileDto.UploadReqDto param, Long reqUserId) {
         UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(reqUserId, param.getSpaceId(), UserSpaceStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException("해당 스페이스에 대한 권한이 없습니다"));
 
         MultipartFile multipartFile = param.getFile();
         if(multipartFile == null || multipartFile.isEmpty()) {
-            return;
+            return "";
         }
 
         String originalFilename = multipartFile.getOriginalFilename();
         String storeFileName = createStoreFileName(originalFilename);
         String fullPath = fileDir + storeFileName;
+        java.io.File saveFile = new java.io.File(fullPath);
+
+        if (!saveFile.getParentFile().exists()) {
+            saveFile.getParentFile().mkdirs();
+        }
 
         try {
-            multipartFile.transferTo(new java.io.File(fullPath));
+            multipartFile.transferTo(saveFile);
         } catch (IOException e) {
             throw new RuntimeException("파일 저장 중 오류 발생" + e);
         }
@@ -73,6 +78,7 @@ public class FileServiceImpl implements FileService {
         );
 
         fileRepository.save(file);
+        return fullPath;
     }
 
     @Override

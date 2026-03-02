@@ -18,7 +18,7 @@ public class RagChatbotClient {
     @Value("${chatbot.python.default-space-id:default}")
     private String defaultSpaceId;
 
-    public String ask(ChatbotDto.ChatReqDto param) {
+    public String ask(ChatbotDto.ChatReqDto param, Long spaceId) {
         String question = (param == null) ? null : param.getQuestion();
         if (question == null || question.isBlank()) {
             throw new IllegalArgumentException("question is empty");
@@ -26,7 +26,7 @@ public class RagChatbotClient {
 
         Map<String, Object> body = Map.of(
                 "question", question,
-                "space_id", defaultSpaceId
+                "space_id", String.valueOf(spaceId)
         );
 
         HttpHeaders headers = new HttpHeaders();
@@ -53,6 +53,24 @@ public class RagChatbotClient {
                     + ", body=" + e.getResponseBodyAsString(), e);
         } catch (ResourceAccessException e) {
             throw new IllegalStateException("Python chatbot timeout/unreachable", e);
+        }
+    }
+
+    public void ingest(Long spaceId, String filePath) {
+        Map<String, Object> body = Map.of(
+                "space_id", spaceId.toString(),
+                "file_path", filePath
+        );
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+        try {
+            pythonRestTemplate.exchange("/ingest", HttpMethod.POST, entity, String.class);
+        } catch (Exception e) {
+            System.out.println("FastAPI 422 에러 상세 내용: " + e);
+            throw new IllegalStateException("Python ingest request failed", e);
         }
     }
 }

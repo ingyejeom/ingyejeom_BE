@@ -6,4 +6,5 @@ import org.springframework.stereotype.Service;
 @Service
 public interface ChatbotService {
     ChatbotDto.ChatResDto askChatbot(ChatbotDto.ChatReqDto param, Long reqUserId);
+    void ingestRequest(Long spaceId, String filePath);
 }

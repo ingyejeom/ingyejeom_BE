@@ -3,6 +3,7 @@ package com.thc.capstone.controller;
 import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.FileDto;
 import com.thc.capstone.security.PrincipalDetails;
+import com.thc.capstone.service.ChatbotService;
 import com.thc.capstone.service.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -25,6 +26,7 @@ import java.util.List;
 @RestController
 public class FileRestController {
     final FileService fileService;
+    private final ChatbotService chatbotService;
 
     public Long getUserId(PrincipalDetails principalDetails) {
         if(principalDetails != null && principalDetails.getUser() != null) {
@@ -42,14 +44,19 @@ public class FileRestController {
             @AuthenticationPrincipal PrincipalDetails principal
     ) {
         Long fId = (folderId == null || folderId.equals("null") || folderId.isEmpty()) ? null : Long.parseLong(folderId);
+        Long sId = Long.parseLong(spaceId);
 
         FileDto.UploadReqDto req = FileDto.UploadReqDto.builder()
                 .file(file)
-                .spaceId(Long.parseLong(spaceId))
+                .spaceId(sId)
                 .folderId(fId)
                 .build();
 
-        fileService.upload(req, principal.getUser().getId());
+        String savedFilePath = fileService.upload(req, principal.getUser().getId());
+        if(savedFilePath != null && !savedFilePath.isEmpty()) {
+            chatbotService.ingestRequest(sId, savedFilePath);
+        }
+
         return ResponseEntity.ok().build();
     }
 

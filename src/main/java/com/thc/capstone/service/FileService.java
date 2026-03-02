@@ -8,7 +8,7 @@ import java.util.List;
 
 @Service
 public interface FileService {
-    void upload(FileDto.UploadReqDto param, Long reqUserId);
+    String upload(FileDto.UploadReqDto param, Long reqUserId);
 
     void createFolder(FileDto.CreateFolderReqDto param, Long reqUserId);
 
