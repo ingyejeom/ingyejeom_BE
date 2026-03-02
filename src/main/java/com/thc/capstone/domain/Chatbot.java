@@ -1,6 +1,8 @@
 package com.thc.capstone.domain;
 
+import com.thc.capstone.dto.ChatbotDto;
 import com.thc.capstone.dto.DefaultDto;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,7 +10,9 @@ import lombok.Setter;
 @Entity @Getter @Setter
 public class Chatbot extends AuditingFields {
 
+    @Column(columnDefinition = "TEXT")
     String question;
+    @Column(columnDefinition = "TEXT")
     String answer;
     Long userSpaceId;
 
@@ -26,6 +30,15 @@ public class Chatbot extends AuditingFields {
     public DefaultDto.CreateResDto toCreateResDto(){
         return DefaultDto.CreateResDto.builder()
                 .id(getId())
+                .build();
+    }
+
+    public ChatbotDto.HistoryResDto toHistoryResDto() {
+        return ChatbotDto.HistoryResDto.builder()
+                .id(this.getId())
+                .question(this.question)
+                .answer(this.answer)
+                .createdAt(this.getCreatedAt() != null ? this.getCreatedAt().toString() : "")
                 .build();
     }
 }
