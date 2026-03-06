@@ -71,7 +71,7 @@ public class HandoverRestController {
         return ResponseEntity.ok(handoverService.detail(param, getUserId(principalDetails)));
     }
 
-    // GET /api/handover/space/1 - 특정 스페이스의 인수인계 문서 목록 조회
+    // GET /api/handover/space/1 - 특정 스페이스의 인수인계 문서 목록 조회 (루트 폴더)
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/space/{spaceId}")
     public ResponseEntity<List<HandoverDto.DetailResDto>> listBySpaceId(
@@ -79,6 +79,17 @@ public class HandoverRestController {
             @AuthenticationPrincipal PrincipalDetails principalDetails) {
 
         return ResponseEntity.ok(handoverService.listBySpaceId(spaceId, getUserId(principalDetails)));
+    }
+
+    // GET /api/handover/space/1/folder/2 - 특정 스페이스의 특정 폴더 인수인계 문서 목록 조회
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/space/{spaceId}/folder/{folderId}")
+    public ResponseEntity<List<HandoverDto.DetailResDto>> listBySpaceIdAndFolderId(
+            @PathVariable Long spaceId,
+            @PathVariable Long folderId,
+            @AuthenticationPrincipal PrincipalDetails principalDetails) {
+
+        return ResponseEntity.ok(handoverService.listBySpaceIdAndFolderId(spaceId, folderId, getUserId(principalDetails)));
     }
 
     // PUT /api/handover/modules - 모듈 데이터(JSON)만 업데이트
@@ -92,6 +103,17 @@ public class HandoverRestController {
         String text = param.get("text").toString();
 
         handoverService.updateModules(id, text, getUserId(principalDetails));
+        return ResponseEntity.ok().build();
+    }
+
+    // PUT /api/handover/move - 인수인계 문서를 다른 폴더로 이동
+    @PreAuthorize("hasRole('USER')")
+    @PutMapping("/move")
+    public ResponseEntity<Void> move(
+            @RequestBody HandoverDto.MoveReqDto param,
+            @AuthenticationPrincipal PrincipalDetails principalDetails) {
+
+        handoverService.move(param, getUserId(principalDetails));
         return ResponseEntity.ok().build();
     }
 }

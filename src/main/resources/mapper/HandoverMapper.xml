@@ -15,6 +15,7 @@
             h.role,
             h.text,
             h.user_space_id AS userSpaceId,
+            h.folder_id AS folderId,
             us.space_id AS spaceId,
             s.work_name AS workName,
             g.group_name AS groupName,
@@ -27,7 +28,7 @@
         WHERE h.id = #{id}
     </select>
 
-    <!-- 특정 스페이스의 모든 인수인계 문서 목록 조회 -->
+    <!-- 특정 스페이스의 모든 인수인계 문서 목록 조회 (루트 폴더만) -->
     <select id="listBySpaceId" parameterType="Long"
             resultType="com.thc.capstone.dto.HandoverDto$DetailResDto">
         SELECT
@@ -35,6 +36,7 @@
             h.title,
             h.role,
             h.user_space_id AS userSpaceId,
+            h.folder_id AS folderId,
             h.created_at AS createdAt,
             u.name AS userName
         FROM handover h
@@ -42,6 +44,27 @@
         LEFT JOIN user u ON us.user_id = u.id
         WHERE us.space_id = #{spaceId}
           AND h.deleted = false
+          AND h.folder_id IS NULL
+        ORDER BY h.created_at DESC
+    </select>
+
+    <!-- 특정 스페이스와 폴더의 인수인계 문서 목록 조회 -->
+    <select id="listBySpaceIdAndFolderId"
+            resultType="com.thc.capstone.dto.HandoverDto$DetailResDto">
+        SELECT
+            h.id,
+            h.title,
+            h.role,
+            h.user_space_id AS userSpaceId,
+            h.folder_id AS folderId,
+            h.created_at AS createdAt,
+            u.name AS userName
+        FROM handover h
+        INNER JOIN user_space us ON h.user_space_id = us.id
+        LEFT JOIN user u ON us.user_id = u.id
+        WHERE us.space_id = #{param1}
+          AND h.deleted = false
+          AND h.folder_id = #{param2}
         ORDER BY h.created_at DESC
     </select>
 
