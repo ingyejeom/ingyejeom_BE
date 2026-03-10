@@ -21,7 +21,7 @@ public class ChatbotHttpConfig {
     ) {
         HttpClient httpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
-                .connectTimeout(Duration.ofMillis(timeoutMs))
+                .connectTimeout(Duration.ofMillis(5000))
                 .build();
 
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);

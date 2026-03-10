@@ -42,9 +42,12 @@ public class FileRestController {
             @RequestPart("spaceId") String spaceId, // FormData는 문자열로 옴
             @RequestParam(value = "folderId", required = false) String folderId,
             @AuthenticationPrincipal PrincipalDetails principal
-    ) {
+    ) throws IOException {
         Long fId = (folderId == null || folderId.equals("null") || folderId.isEmpty()) ? null : Long.parseLong(folderId);
         Long sId = Long.parseLong(spaceId);
+
+        byte[] fileBytes = file.getBytes();
+        String originalFileName = file.getOriginalFilename();
 
         FileDto.UploadReqDto req = FileDto.UploadReqDto.builder()
                 .file(file)
@@ -54,7 +57,7 @@ public class FileRestController {
 
         String savedFilePath = fileService.upload(req, principal.getUser().getId());
         if(savedFilePath != null && !savedFilePath.isEmpty()) {
-            chatbotService.ingestRequest(sId, savedFilePath);
+            chatbotService.ingestRequest(principal.getUser().getId(), sId, fileBytes, originalFileName);
         }
 
         return ResponseEntity.ok().build();
