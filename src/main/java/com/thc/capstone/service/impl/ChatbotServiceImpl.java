@@ -10,14 +10,11 @@ import com.thc.capstone.service.ChatbotService;
 import com.thc.capstone.client.RagChatbotClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -74,15 +71,16 @@ public class ChatbotServiceImpl implements ChatbotService {
 
     @Override
     @Async
-    public void ingestRequest(Long spaceId, String filePath) {
-        log.info("[IngestRequest] Starting async ingest. spaceId: {}, path: {}", spaceId, filePath);
+    public void ingestRequest(Long userId, Long spaceId, byte[] fileBytes, String fileName) {
+        log.info("[IngestRequest] Starting async ingest. spaceId: {}, fileName: {}", spaceId, fileName);
         try {
-            ragChatbotClient.ingest(spaceId, filePath);
+            ragChatbotClient.ingest(userId,  spaceId, fileBytes, fileName);
             // 성공 로그
-            log.info("[IngestRequest] Ingest request sent successfully. spaceId={}, filePath={}", spaceId, filePath);
+            log.info("[IngestRequest] Ingest request sent successfully. spaceId={}", spaceId);
         } catch (Exception e) {
             // 실패 로그
-            log.error("[IngestRequest] Python ingest request failed! spaceId={}, filePath={}", spaceId, filePath, e);
+            log.error("[IngestRequest] Python ingest request failed! spaceId={}", spaceId, e);
+            log.info("파이썬 백그라운드 [Ingest] 작업 진행 중...");
         }
     }
 
