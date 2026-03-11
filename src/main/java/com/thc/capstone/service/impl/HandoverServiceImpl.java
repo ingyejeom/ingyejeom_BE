@@ -16,49 +16,35 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
-// 인수인계 관련 비즈니스 로직을 실제로 처리하는 클래스
+/**
+ * 인수인계 문서 비즈니스 로직 구현체
+ *
+ * UserSpace 소유자만 해당 문서를 생성/수정/삭제할 수 있도록 권한을 검증한다.
+ * 복잡한 조회(JOIN 필요)는 MyBatis Mapper를, 단순 CRUD는 JPA Repository를 사용한다.
+ */
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class HandoverServiceImpl implements HandoverService {
 
-    private final HandoverRepository handoverRepository;    // 인수인계 DB 접근
-    private final UserSpaceRepository userSpaceRepository;  // 권한 확인용
-    private final HandoverMapper handoverMapper;            // 복잡한 쿼리 실행용
+    private final HandoverRepository handoverRepository;
+    private final UserSpaceRepository userSpaceRepository;
+    private final HandoverMapper handoverMapper;
 
-    // 새 인수인계 문서 생성
     @Override
     @Transactional
     public DefaultDto.CreateResDto create(HandoverDto.CreateReqDto param, Long reqUserId) {
-        // 로그인 체크
-        if (reqUserId == null) {
-            throw new RuntimeException("로그인이 필요한 서비스입니다.");
-        }
+        validateLogin(reqUserId);
 
         try {
-            // UserSpace가 존재하는지 확인
             UserSpace userSpace = userSpaceRepository.findById(param.getUserSpaceId())
                     .orElseThrow(() -> new RuntimeException("존재하지 않는 UserSpace입니다."));
 
-            // 요청한 사람이 이 UserSpace의 주인인지 확인
-            if (!userSpace.getUserId().equals(reqUserId)) {
-                throw new RuntimeException("해당 인수인계서에 대한 권한이 없습니다.");
-            }
+            validateOwnership(userSpace, reqUserId);
 
-            // 제목이 없으면 자동 생성 (역할명 + 인수인계서)
-            String title = param.getTitle();
-            if (title == null || title.trim().isEmpty()) {
-                String role = param.getRole();
-                title = (role != null && !role.trim().isEmpty()) ? role + " 인수인계서" : "인수인계서";
-            }
+            String title = resolveTitle(param.getTitle(), param.getRole());
+            String text = resolveText(param.getText(), title, param.getRole());
 
-            // 내용이 없으면 빈 JSON 구조 생성
-            String text = param.getText();
-            if (text == null || text.trim().isEmpty()) {
-                text = "{\"title\":\"" + title + "\",\"role\":\"" + param.getRole() + "\",\"modules\":[]}";
-            }
-
-            // 인수인계 문서 저장
             Handover handover = Handover.of(title, param.getRole(), text, param.getUserSpaceId());
             handoverRepository.save(handover);
 
@@ -71,25 +57,20 @@ public class HandoverServiceImpl implements HandoverService {
         }
     }
 
-    // 인수인계 문서 수정
     @Override
     @Transactional
     public void update(HandoverDto.UpdateReqDto param, Long reqUserId) {
-        // 문서가 존재하는지 확인
         Handover handover = handoverRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 인수인계 문서입니다."));
 
-        // 수정 권한 확인
         checkPermission(handover.getUserSpaceId(), reqUserId);
 
-        // 수정 후 저장
         handover.update(param);
         handoverRepository.save(handover);
 
         log.info("인수인계 문서 수정 완료 - ID: {}", param.getId());
     }
 
-    // 인수인계 문서 삭제 (실제로 지우지 않고 deleted=true로 표시)
     @Override
     @Transactional
     public void delete(HandoverDto.UpdateReqDto param, Long reqUserId) {
@@ -101,7 +82,121 @@ public class HandoverServiceImpl implements HandoverService {
         log.info("인수인계 문서 삭제 완료 - ID: {}", param.getId());
     }
 
-    // 인수인계 문서 1개 상세 조회 (내부용)
+    @Override
+    public HandoverDto.DetailResDto detail(DefaultDto.DetailReqDto param, Long reqUserId) {
+        return get(param, reqUserId);
+    }
+
+    @Override
+    public List<HandoverDto.DetailResDto> listBySpaceId(Long spaceId, Long reqUserId) {
+        List<HandoverDto.DetailResDto> handovers = handoverMapper.listBySpaceId(spaceId);
+        return enrichWithDetails(handovers, reqUserId);
+    }
+
+    @Override
+    public List<HandoverDto.DetailResDto> listBySpaceIdAndFolderId(Long spaceId, Long folderId, Long reqUserId) {
+        List<HandoverDto.DetailResDto> handovers = handoverMapper.listBySpaceIdAndFolderId(spaceId, folderId);
+        return enrichWithDetails(handovers, reqUserId);
+    }
+
+    @Override
+    @Transactional
+    public void updateModules(Long id, String text, Long reqUserId) {
+        Handover handover = handoverRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 인수인계 문서입니다."));
+
+        checkPermission(handover.getUserSpaceId(), reqUserId);
+
+        handover.setText(text);
+        handoverRepository.save(handover);
+
+        log.info("인수인계 모듈 데이터 업데이트 완료 - ID: {}", id);
+    }
+
+    @Override
+    @Transactional
+    public void move(HandoverDto.MoveReqDto param, Long reqUserId) {
+        Handover handover = handoverRepository.findById(param.getId())
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 인수인계 문서입니다."));
+
+        checkPermission(handover.getUserSpaceId(), reqUserId);
+
+        handover.setFolderId(param.getTargetFolderId());
+        handoverRepository.save(handover);
+
+        log.info("인수인계 문서 이동 완료 - ID: {}, 대상 폴더: {}", param.getId(), param.getTargetFolderId());
+    }
+
+    @Override
+    public HandoverDto.DetailResDto getByUserSpaceId(Long userSpaceId, Long reqUserId) {
+        validateLogin(reqUserId);
+
+        UserSpace userSpace = userSpaceRepository.findById(userSpaceId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 UserSpace입니다."));
+
+        validateOwnership(userSpace, reqUserId);
+
+        return handoverMapper.findByUserSpaceId(userSpaceId);
+    }
+
+    // ========================================
+    // Private Helper Methods
+    // ========================================
+
+    /**
+     * 로그인 여부를 검증한다.
+     */
+    private void validateLogin(Long reqUserId) {
+        if (reqUserId == null) {
+            throw new RuntimeException("로그인이 필요한 서비스입니다.");
+        }
+    }
+
+    /**
+     * 요청자가 UserSpace의 소유자인지 검증한다.
+     */
+    private void validateOwnership(UserSpace userSpace, Long reqUserId) {
+        if (!userSpace.getUserId().equals(reqUserId)) {
+            throw new RuntimeException("해당 인수인계서에 대한 권한이 없습니다.");
+        }
+    }
+
+    /**
+     * 문서 수정/삭제 권한을 검증한다.
+     * UserSpace 소유자만 해당 문서를 수정할 수 있다.
+     */
+    private void checkPermission(Long userSpaceId, Long reqUserId) {
+        validateLogin(reqUserId);
+
+        UserSpace userSpace = userSpaceRepository.findById(userSpaceId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 UserSpace입니다."));
+
+        validateOwnership(userSpace, reqUserId);
+    }
+
+    /**
+     * 제목이 비어있으면 역할명 기반으로 기본 제목을 생성한다.
+     */
+    private String resolveTitle(String title, String role) {
+        if (title != null && !title.trim().isEmpty()) {
+            return title;
+        }
+        return (role != null && !role.trim().isEmpty()) ? role + " 인수인계서" : "인수인계서";
+    }
+
+    /**
+     * 내용이 비어있으면 빈 모듈 배열을 가진 JSON 구조를 생성한다.
+     */
+    private String resolveText(String text, String title, String role) {
+        if (text != null && !text.trim().isEmpty()) {
+            return text;
+        }
+        return "{\"title\":\"" + title + "\",\"role\":\"" + (role != null ? role : "") + "\",\"modules\":[]}";
+    }
+
+    /**
+     * 단일 인수인계 문서를 조회한다.
+     */
     private HandoverDto.DetailResDto get(DefaultDto.DetailReqDto param, Long reqUserId) {
         HandoverDto.DetailResDto res = handoverMapper.detail(param.getId());
 
@@ -112,87 +207,19 @@ public class HandoverServiceImpl implements HandoverService {
         return res;
     }
 
-    // 인수인계 문서 1개 상세 조회 (외부용)
-    @Override
-    public HandoverDto.DetailResDto detail(DefaultDto.DetailReqDto param, Long reqUserId) {
-        return get(param, reqUserId);
-    }
-
-    // 목록의 각 항목에 대해 상세 정보를 추가해서 새 목록 반환
-    private List<HandoverDto.DetailResDto> addList(List<HandoverDto.DetailResDto> list, Long reqUserId) {
-        List<HandoverDto.DetailResDto> newList = new ArrayList<>();
+    /**
+     * 목록의 각 문서에 대해 상세 정보를 조회하여 보강한다.
+     * 목록 조회 시 누락된 연관 데이터를 채우기 위해 사용된다.
+     */
+    private List<HandoverDto.DetailResDto> enrichWithDetails(List<HandoverDto.DetailResDto> list, Long reqUserId) {
+        List<HandoverDto.DetailResDto> enrichedList = new ArrayList<>();
 
         for (HandoverDto.DetailResDto handover : list) {
-            newList.add(get(DefaultDto.DetailReqDto.builder()
+            enrichedList.add(get(DefaultDto.DetailReqDto.builder()
                     .id(handover.getId())
                     .build(), reqUserId));
         }
 
-        return newList;
-    }
-
-    // 특정 스페이스의 모든 인수인계 문서 목록 조회 (루트 폴더)
-    @Override
-    public List<HandoverDto.DetailResDto> listBySpaceId(Long spaceId, Long reqUserId) {
-        List<HandoverDto.DetailResDto> handovers = handoverMapper.listBySpaceId(spaceId);
-        return addList(handovers, reqUserId);
-    }
-
-    // 특정 스페이스와 폴더의 인수인계 문서 목록 조회
-    @Override
-    public List<HandoverDto.DetailResDto> listBySpaceIdAndFolderId(Long spaceId, Long folderId, Long reqUserId) {
-        List<HandoverDto.DetailResDto> handovers = handoverMapper.listBySpaceIdAndFolderId(spaceId, folderId);
-        return addList(handovers, reqUserId);
-    }
-
-    // 인수인계 문서의 모듈 데이터(JSON)만 업데이트
-    @Override
-    @Transactional
-    public void updateModules(Long id, String text, Long reqUserId) {
-        // 문서 조회
-        Handover handover = handoverRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 인수인계 문서입니다."));
-
-        // 권한 확인
-        checkPermission(handover.getUserSpaceId(), reqUserId);
-
-        // 모듈 데이터만 업데이트
-        handover.setText(text);
-        handoverRepository.save(handover);
-
-        log.info("인수인계 모듈 데이터 업데이트 완료 - ID: {}", id);
-    }
-
-    // 요청한 사람이 이 문서를 수정/삭제할 권한이 있는지 확인
-    private void checkPermission(Long userSpaceId, Long reqUserId) {
-        if (reqUserId == null) {
-            throw new RuntimeException("로그인이 필요한 서비스입니다.");
-        }
-
-        UserSpace userSpace = userSpaceRepository.findById(userSpaceId)
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 UserSpace입니다."));
-
-        // 본인만 수정 가능
-        if (!userSpace.getUserId().equals(reqUserId)) {
-            throw new RuntimeException("해당 인수인계서에 대한 권한이 없습니다.");
-        }
-    }
-
-    // 인수인계 문서를 다른 폴더로 이동
-    @Override
-    @Transactional
-    public void move(HandoverDto.MoveReqDto param, Long reqUserId) {
-        // 문서 조회
-        Handover handover = handoverRepository.findById(param.getId())
-                .orElseThrow(() -> new RuntimeException("존재하지 않는 인수인계 문서입니다."));
-
-        // 권한 확인
-        checkPermission(handover.getUserSpaceId(), reqUserId);
-
-        // 폴더 이동
-        handover.setFolderId(param.getTargetFolderId());
-        handoverRepository.save(handover);
-
-        log.info("인수인계 문서 이동 완료 - ID: {}, 대상 폴더: {}", param.getId(), param.getTargetFolderId());
+        return enrichedList;
     }
 }

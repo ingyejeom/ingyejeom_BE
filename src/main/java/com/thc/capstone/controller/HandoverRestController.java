@@ -13,7 +13,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-// 인수인계 관련 REST API를 제공하는 컨트롤러
+/**
+ * 인수인계 문서 REST API 컨트롤러
+ *
+ * 인수인계 문서의 생성, 조회, 수정, 삭제 및 폴더 이동 기능을 제공한다.
+ * 모든 엔드포인트는 USER 권한이 필요하며, 문서 소유자만 수정/삭제가 가능하다.
+ */
 @RequiredArgsConstructor
 @RequestMapping("/api/handover")
 @RestController
@@ -21,7 +26,10 @@ public class HandoverRestController {
 
     private final HandoverService handoverService;
 
-    // 로그인한 사용자의 ID를 가져오는 메서드
+    /**
+     * Spring Security 인증 정보에서 사용자 ID를 추출한다.
+     * 권한 검증 시 요청자 식별에 사용된다.
+     */
     private Long getUserId(PrincipalDetails principalDetails) {
         if (principalDetails != null && principalDetails.getUser() != null) {
             return principalDetails.getUser().getId();
@@ -29,7 +37,10 @@ public class HandoverRestController {
         return null;
     }
 
-    // POST /api/handover - 새 인수인계 문서 생성
+    /**
+     * 새 인수인계 문서를 생성한다.
+     * 요청자는 해당 UserSpace의 소유자여야 한다.
+     */
     @PreAuthorize("hasRole('USER')")
     @PostMapping("")
     public ResponseEntity<DefaultDto.CreateResDto> create(
@@ -39,7 +50,10 @@ public class HandoverRestController {
         return ResponseEntity.ok(handoverService.create(param, getUserId(principalDetails)));
     }
 
-    // PUT /api/handover - 인수인계 문서 수정
+    /**
+     * 기존 인수인계 문서의 제목, 역할, 내용을 수정한다.
+     * null이 아닌 필드만 업데이트된다.
+     */
     @PreAuthorize("hasRole('USER')")
     @PutMapping("")
     public ResponseEntity<Void> update(
@@ -50,7 +64,10 @@ public class HandoverRestController {
         return ResponseEntity.ok().build();
     }
 
-    // DELETE /api/handover - 인수인계 문서 삭제
+    /**
+     * 인수인계 문서를 논리적으로 삭제한다.
+     * 실제 데이터는 유지되며 deleted 플래그만 true로 변경된다.
+     */
     @PreAuthorize("hasRole('USER')")
     @DeleteMapping("")
     public ResponseEntity<Void> delete(
@@ -61,7 +78,10 @@ public class HandoverRestController {
         return ResponseEntity.ok().build();
     }
 
-    // GET /api/handover?id=1 - 인수인계 문서 1개 상세 조회
+    /**
+     * 단일 인수인계 문서의 상세 정보를 조회한다.
+     * 스페이스명, 그룹명, 작성자명 등 연관 정보가 포함된다.
+     */
     @PreAuthorize("hasRole('USER')")
     @GetMapping("")
     public ResponseEntity<HandoverDto.DetailResDto> detail(
@@ -71,7 +91,10 @@ public class HandoverRestController {
         return ResponseEntity.ok(handoverService.detail(param, getUserId(principalDetails)));
     }
 
-    // GET /api/handover/space/1 - 특정 스페이스의 인수인계 문서 목록 조회 (루트 폴더)
+    /**
+     * 특정 스페이스의 루트 폴더에 있는 인수인계 문서 목록을 조회한다.
+     * 하위 폴더의 문서는 포함되지 않는다.
+     */
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/space/{spaceId}")
     public ResponseEntity<List<HandoverDto.DetailResDto>> listBySpaceId(
@@ -81,7 +104,9 @@ public class HandoverRestController {
         return ResponseEntity.ok(handoverService.listBySpaceId(spaceId, getUserId(principalDetails)));
     }
 
-    // GET /api/handover/space/1/folder/2 - 특정 스페이스의 특정 폴더 인수인계 문서 목록 조회
+    /**
+     * 특정 스페이스의 특정 폴더에 있는 인수인계 문서 목록을 조회한다.
+     */
     @PreAuthorize("hasRole('USER')")
     @GetMapping("/space/{spaceId}/folder/{folderId}")
     public ResponseEntity<List<HandoverDto.DetailResDto>> listBySpaceIdAndFolderId(
@@ -92,7 +117,10 @@ public class HandoverRestController {
         return ResponseEntity.ok(handoverService.listBySpaceIdAndFolderId(spaceId, folderId, getUserId(principalDetails)));
     }
 
-    // PUT /api/handover/modules - 모듈 데이터(JSON)만 업데이트
+    /**
+     * 인수인계 문서의 모듈 데이터(JSON)만 부분 업데이트한다.
+     * 제목, 역할 등 메타데이터는 변경되지 않는다.
+     */
     @PreAuthorize("hasRole('USER')")
     @PutMapping("/modules")
     public ResponseEntity<Void> updateModules(
@@ -106,7 +134,10 @@ public class HandoverRestController {
         return ResponseEntity.ok().build();
     }
 
-    // PUT /api/handover/move - 인수인계 문서를 다른 폴더로 이동
+    /**
+     * 인수인계 문서를 다른 폴더로 이동한다.
+     * targetFolderId가 null이면 루트 폴더로 이동한다.
+     */
     @PreAuthorize("hasRole('USER')")
     @PutMapping("/move")
     public ResponseEntity<Void> move(
@@ -115,5 +146,23 @@ public class HandoverRestController {
 
         handoverService.move(param, getUserId(principalDetails));
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 특정 UserSpace에 연결된 인수인계 문서를 조회한다.
+     * 문서가 존재하면 200 OK, 없으면 404 Not Found를 반환한다.
+     * 스페이스 목록에서 인수인계 버튼 클릭 시 기존 문서 존재 여부 확인에 사용된다.
+     */
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/userSpace/{userSpaceId}")
+    public ResponseEntity<HandoverDto.DetailResDto> getByUserSpaceId(
+            @PathVariable Long userSpaceId,
+            @AuthenticationPrincipal PrincipalDetails principalDetails) {
+
+        HandoverDto.DetailResDto result = handoverService.getByUserSpaceId(userSpaceId, getUserId(principalDetails));
+        if (result == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(result);
     }
 }

@@ -145,9 +145,9 @@
         location.href = '/space/fileList/' + spaceId;
     }
 
-    // 해당 userSpace의 인수인계 생성/편집 페이지로 이동 (이미 존재하면 edit으로 리다이렉트)
+    // 해당 userSpace의 인수인계 편집 페이지로 이동
     function goHandover(userSpaceId) {
-        location.href = '/handover/create/' + userSpaceId;
+        location.href = '/handover/edit?userSpaceId=' + userSpaceId;
     }
 
     function requestInvite(spaceId) {
