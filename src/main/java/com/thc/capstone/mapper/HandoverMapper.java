@@ -12,4 +12,7 @@ public interface HandoverMapper {
 
     // 특정 스페이스의 모든 인수인계 문서 목록 조회
     List<HandoverDto.DetailResDto> listBySpaceId(Long spaceId);
+
+    // 특정 스페이스와 폴더의 인수인계 문서 목록 조회
+    List<HandoverDto.DetailResDto> listBySpaceIdAndFolderId(Long spaceId, Long folderId);
 }

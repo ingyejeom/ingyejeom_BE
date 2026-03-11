@@ -131,10 +131,17 @@ public class HandoverServiceImpl implements HandoverService {
         return newList;
     }
 
-    // 특정 스페이스의 모든 인수인계 문서 목록 조회
+    // 특정 스페이스의 모든 인수인계 문서 목록 조회 (루트 폴더)
     @Override
     public List<HandoverDto.DetailResDto> listBySpaceId(Long spaceId, Long reqUserId) {
         List<HandoverDto.DetailResDto> handovers = handoverMapper.listBySpaceId(spaceId);
+        return addList(handovers, reqUserId);
+    }
+
+    // 특정 스페이스와 폴더의 인수인계 문서 목록 조회
+    @Override
+    public List<HandoverDto.DetailResDto> listBySpaceIdAndFolderId(Long spaceId, Long folderId, Long reqUserId) {
+        List<HandoverDto.DetailResDto> handovers = handoverMapper.listBySpaceIdAndFolderId(spaceId, folderId);
         return addList(handovers, reqUserId);
     }
 
@@ -169,5 +176,23 @@ public class HandoverServiceImpl implements HandoverService {
         if (!userSpace.getUserId().equals(reqUserId)) {
             throw new RuntimeException("해당 인수인계서에 대한 권한이 없습니다.");
         }
+    }
+
+    // 인수인계 문서를 다른 폴더로 이동
+    @Override
+    @Transactional
+    public void move(HandoverDto.MoveReqDto param, Long reqUserId) {
+        // 문서 조회
+        Handover handover = handoverRepository.findById(param.getId())
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 인수인계 문서입니다."));
+
+        // 권한 확인
+        checkPermission(handover.getUserSpaceId(), reqUserId);
+
+        // 폴더 이동
+        handover.setFolderId(param.getTargetFolderId());
+        handoverRepository.save(handover);
+
+        log.info("인수인계 문서 이동 완료 - ID: {}, 대상 폴더: {}", param.getId(), param.getTargetFolderId());
     }
 }

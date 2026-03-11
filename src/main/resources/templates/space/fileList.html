@@ -183,10 +183,8 @@
                 let area = $("#file_list_area");
                 area.empty();
 
-                // 루트 폴더일 때만 인수인계 문서 표시
-                if (currentFolderId === null) {
-                    loadHandovers();
-                }
+                // 인수인계 문서 표시 (루트 또는 현재 폴더)
+                loadHandovers(currentFolderId);
 
                 if(!data || data.length === 0){
                     if (currentFolderId !== null) {
@@ -251,17 +249,26 @@
     // ==========================================
     // 1-1. 인수인계 목록 조회 & 렌더링 (파일과 동일한 카드 스타일)
     // ==========================================
-    function loadHandovers() {
+    function loadHandovers(folderId) {
+        // 루트 폴더면 기존 API, 아니면 폴더별 API 호출
+        let url = '/api/handover/space/' + spaceId;
+        if (folderId !== null) {
+            url = '/api/handover/space/' + spaceId + '/folder/' + folderId;
+        }
+
         $.ajax({
-            url: '/api/handover/space/' + spaceId,
+            url: url,
             method: 'GET',
             success: function(data) {
                 if (!data || data.length === 0) return;
 
                 let area = $("#file_list_area");
                 $.each(data, function(idx, item) {
+                    // ★ 드래그 속성 추가 (파일/폴더와 동일하게)
+                    let dragAttr = `draggable="true" ondragstart="handleDragStart(event, ${item.id}, 'HANDOVER')"`;
+
                     let html = `
-                        <div class="item-card">
+                        <div class="item-card" ${dragAttr}>
                             <div class="item-icon">📋</div>
                             <div class="item-name">${item.title || '인수인계서'}</div>
                             <div class="item-meta">${item.role || ''}</div>
@@ -480,22 +487,41 @@
 
     // 서버 이동 API 호출
     function moveItem(id, type, targetFolderId) {
-        $.ajax({
-            url: '/api/file/move',
-            method: 'PUT',
-            contentType: 'application/json',
-            data: JSON.stringify({
-                id: id,
-                type: type,
-                targetFolderId: targetFolderId // null이면 루트로 이동됨
-            }),
-            success: function() {
-                loadItems(); // 이동 후 현재 목록 갱신
-            },
-            error: function(err) {
-                alert("이동 실패: " + (err.responseText || "오류"));
-            }
-        });
+        // ★ 인수인계 문서는 별도 API 사용
+        if (type === 'HANDOVER') {
+            $.ajax({
+                url: '/api/handover/move',
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    id: id,
+                    targetFolderId: targetFolderId // null이면 루트로 이동됨
+                }),
+                success: function() {
+                    loadItems(); // 이동 후 현재 목록 갱신
+                },
+                error: function(err) {
+                    alert("이동 실패: " + (err.responseText || "오류"));
+                }
+            });
+        } else {
+            $.ajax({
+                url: '/api/file/move',
+                method: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    id: id,
+                    type: type,
+                    targetFolderId: targetFolderId // null이면 루트로 이동됨
+                }),
+                success: function() {
+                    loadItems(); // 이동 후 현재 목록 갱신
+                },
+                error: function(err) {
+                    alert("이동 실패: " + (err.responseText || "오류"));
+                }
+            });
+        }
     }
 
 </script>

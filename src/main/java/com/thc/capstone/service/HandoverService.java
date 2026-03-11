@@ -22,9 +22,15 @@ public interface HandoverService {
     // 인수인계 문서 1개 상세 조회
     HandoverDto.DetailResDto detail(DefaultDto.DetailReqDto param, Long reqUserId);
 
-    // 특정 스페이스의 모든 인수인계 문서 목록 조회
+    // 특정 스페이스의 모든 인수인계 문서 목록 조회 (루트 폴더)
     List<HandoverDto.DetailResDto> listBySpaceId(Long spaceId, Long reqUserId);
+
+    // 특정 스페이스와 폴더의 인수인계 문서 목록 조회
+    List<HandoverDto.DetailResDto> listBySpaceIdAndFolderId(Long spaceId, Long folderId, Long reqUserId);
 
     // 인수인계 문서의 모듈 데이터(JSON)만 업데이트
     void updateModules(Long id, String text, Long reqUserId);
+
+    // 인수인계 문서를 다른 폴더로 이동
+    void move(HandoverDto.MoveReqDto param, Long reqUserId);
 }

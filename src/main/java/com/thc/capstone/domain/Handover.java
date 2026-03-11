@@ -27,6 +27,9 @@ public class Handover extends AuditingFields {
     @Setter
     private Long userSpaceId; // 이 문서가 속한 UserSpace의 ID
 
+    @Setter
+    private Long folderId; // 이 문서가 속한 폴더의 ID (null이면 루트)
+
     // JPA에서 필요한 기본 생성자 (외부에서 직접 호출 불가)
     protected Handover() {}
 

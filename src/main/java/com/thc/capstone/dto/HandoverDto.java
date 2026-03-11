@@ -62,8 +62,19 @@ public class HandoverDto {
         private String text;        // 인수인계 내용 (JSON)
         private Long userSpaceId;   // UserSpace ID
         private Long spaceId;       // Space ID (파일 업로드용)
+        private Long folderId;      // 폴더 ID (null이면 루트)
         private String workName;    // 스페이스 이름 (DB에서 JOIN해서 가져옴)
         private String groupName;   // 그룹 이름 (DB에서 JOIN해서 가져옴)
         private String userName;    // 작성자 이름 (DB에서 JOIN해서 가져옴)
+    }
+
+    // 인수인계 문서 이동 요청 데이터
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MoveReqDto {
+        private Long id;            // 이동할 인수인계 문서 ID
+        private Long targetFolderId; // 이동할 대상 폴더 ID (null이면 루트)
     }
 }
