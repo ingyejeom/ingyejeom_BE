@@ -56,13 +56,16 @@ public class FileServiceImpl implements FileService {
         String originalFilename = multipartFile.getOriginalFilename();
         String storeFileName = createStoreFileName(originalFilename);
         String fullPath = fileDir + storeFileName;
+        // 파일 저장 경로를 제어하기 위해 String 경로 대신 java.io.File 객체로 생성합니다.
         java.io.File saveFile = new java.io.File(fullPath);
 
+        // 디렉토리 안전성 확보: 지정된 경로에 폴더가 존재하지 않으면 mkdirs()를 호출하여 필요한 모든 상위 디렉토리를 자동으로 생성합니다. (FileNotFoundException 방지)
         if (!saveFile.getParentFile().exists()) {
             saveFile.getParentFile().mkdirs();
         }
 
         try {
+            // 새로 생성한 File 객체(saveFile)를 타겟으로 지정하여 안전하게 파일 데이터를 디스크에 기록합니다.
             multipartFile.transferTo(saveFile);
         } catch (IOException e) {
             throw new RuntimeException("파일 저장 중 오류 발생" + e);
@@ -79,6 +82,7 @@ public class FileServiceImpl implements FileService {
 
         fileRepository.save(file);
         return fullPath;
+        // 파일 저장이 성공한 경우 파이썬에 넘기기 위해 저장 경로를 반환하는 로직을 추가했습니다.
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.thc.capstone.controller;
 
+import com.thc.capstone.dto.ChatbotDto;
 import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.FileDto;
 import com.thc.capstone.security.PrincipalDetails;
@@ -26,6 +27,8 @@ import java.util.List;
 @RestController
 public class FileRestController {
     final FileService fileService;
+
+    // 파일 업로드 완료 후 파이썬 RAG 서버로 벡터화(Ingest)를 요청하기 위해 ChatbotService를 추가했습니다.
     private final ChatbotService chatbotService;
 
     public Long getUserId(PrincipalDetails principalDetails) {
@@ -42,10 +45,12 @@ public class FileRestController {
             @RequestPart("spaceId") String spaceId, // FormData는 문자열로 옴
             @RequestParam(value = "folderId", required = false) String folderId,
             @AuthenticationPrincipal PrincipalDetails principal
-    ) throws IOException {
+    ) throws IOException { // file.getBytes()(파일 입출력 과정) 발생할 수 있는 예외를 처리하기 위해 IOException 추가했습니다.
         Long fId = (folderId == null || folderId.equals("null") || folderId.isEmpty()) ? null : Long.parseLong(folderId);
         Long sId = Long.parseLong(spaceId);
 
+        // Service 계층에서 transferTo()로 파일 스트림을 소모하기 전에,
+        // 파이썬 서버로 직접 쏘기 위한 순수 바이트 배열과 원본 파일명을 미리 메모리에 추출해 둡니다.
         byte[] fileBytes = file.getBytes();
         String originalFileName = file.getOriginalFilename();
 
@@ -55,9 +60,12 @@ public class FileRestController {
                 .folderId(fId)
                 .build();
 
+        // 파일이 저장이 되고 저장된 주소를 확인하여 저장이 잘 됐는지 판단합니다.
         String savedFilePath = fileService.upload(req, principal.getUser().getId());
         if(savedFilePath != null && !savedFilePath.isEmpty()) {
-            chatbotService.ingestRequest(principal.getUser().getId(), sId, fileBytes, originalFileName);
+            // 판단 후 저장이 잘 됐다면 ChatbotDto.IngestReqDto 객체를 생성하고 챗봇 서버로 ingest 요청을 보내기 위해 챗봇서비스 계층에 요청합니다.
+            ChatbotDto.IngestReqDto ingestReqDto = ChatbotDto.IngestReqDto.builder().spaceId(sId).fileBytes(fileBytes).fileName(originalFileName).build();
+            chatbotService.ingestRequest(ingestReqDto, getUserId(principal));
         }
 
         return ResponseEntity.ok().build();

@@ -12,29 +12,41 @@ import org.springframework.web.client.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 파이썬 기반의 RAG 챗봇 서버와 통신하기 위한 HTTP 클라이언트 컴포넌트입니다.
+ * RestTemplate을 활용하여 질의응답 및 문서 벡터화 요청을 처리합니다.
+ */
 @Component
 @RequiredArgsConstructor
 public class RagChatbotClient {
+
+    // ChatbotHttpConfig에서 Bean으로 등록된 커스텀 RestTemplate을 주입받아 사용합니다.
+    // 타임아웃 설정 및 기본 URL(application.yaml/chatbot.python.base-url)이 미리 세팅되어 있습니다.
     private final RestTemplate pythonRestTemplate;
 
-    public String ask(ChatbotDto.ChatReqDto param, Long spaceId) {
-        String question = (param == null) ? null : param.getQuestion();
-        if (question == null || question.isBlank()) {
-            throw new IllegalArgumentException("question is empty");
-        }
-
+    /**
+     * 사용자 질의(Question)를 파이썬 챗봇 서버로 전송하고 응답을 받아옵니다.
+     * @param param 사용자의 질문(question)과 스페이스 ID(spaceId)
+     * @return 챗봇의 응답 결과 텍스트
+     */
+    public String ask(ChatbotDto.ChatReqDto param) {
+        // Map.of를 사용하여 불변(Immutable) 맵으로 안전하게 데이터를 구성합니다.
         Map<String, Object> body = Map.of(
-                "question", question,
-                "space_id", String.valueOf(spaceId)
-        );
+                "question", param.getQuestion(),
+                "space_id", param.getSpaceId()
+        );;
 
+        // HTTP 헤더 설정 (JSON 타입 통신)
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+        // 헤더와 바디를 결합하여 HTTP 엔티티 객체 생성
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
 
         try {
+            // 파이썬 서버의 '/chatbot' 엔드포인트로 POST 요청 전송
             ResponseEntity<ChatbotDto.ChatResDto> res = pythonRestTemplate.exchange(
                     "/chatbot",
                     HttpMethod.POST,
@@ -42,55 +54,52 @@ public class RagChatbotClient {
                     ChatbotDto.ChatResDto.class
             );
 
+            // 파이썬 서버의 '/chatbot' 엔드포인트로 POST 요청 전송
+            // 2xx 성공 코드가 아니거나, 응답 바디/답변이 비어있으면 예외 처리
             if (!res.getStatusCode().is2xxSuccessful() || res.getBody() == null || res.getBody().getAnswer() == null) {
                 throw new IllegalStateException("Python chatbot returned empty response");
             }
+
+            // 정상의 경우 챗봇의 답변 텍스트 반환
             return res.getBody().getAnswer();
 
-        } catch (HttpStatusCodeException e) {
+        } catch (HttpStatusCodeException e) { // 에러 발생 시 상세 내용과 함께 예외 처리
             throw new IllegalStateException("Python chatbot HTTP error: " + e.getStatusCode()
                     + ", body=" + e.getResponseBodyAsString(), e);
-        } catch (ResourceAccessException e) {
+        } catch (ResourceAccessException e) { // Timeout 혹은 서버 연결 안 되는 문제 발생 시 예외 처리
             throw new IllegalStateException("Python chatbot timeout/unreachable", e);
         }
     }
 
-//    public void ingest(Long spaceId, String filePath) {
-//        Map<String, Object> body = Map.of(
-//                "space_id", spaceId.toString(),
-//                "file_path", filePath
-//        );
-//
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.setContentType(MediaType.APPLICATION_JSON);
-//        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-//
-//        try {
-//            pythonRestTemplate.exchange("/ingest", HttpMethod.POST, entity, String.class);
-//        } catch (Exception e) {
-//            System.out.println("FastAPI 422 에러 상세 내용: " + e);
-//            throw new IllegalStateException("Python ingest request failed", e);
-//        }
-//    }
-
-    public void ingest(Long userId, Long spaceId, byte[] fileBytes, String fileName) {
+    /**
+     * 파일을 파이썬 챗봇 서버로 전송하고 벡터화(Ingest)합니다.
+     * @param param 파일과 스페이스 ID를 담은 Dto
+     * @param reqUserId 요청을 보낸 사용자의 ID
+     */
+    public void ingest(ChatbotDto.IngestReqDto param, Long reqUserId) {
         // 바이트 배열을 전송 가능한 리소스로 변환
-        ByteArrayResource resource = new ByteArrayResource(fileBytes) {
+        ByteArrayResource resource = new ByteArrayResource(param.getFileBytes()) {
             @Override
             public String getFilename() {
-                return fileName;
+                return param.getFileName();
             }
         };
 
+        // MultipartFormData 요청 바디 생성
+        // MultiValueMap을 사용하여 file, spaceId, userId를 폼 데이터로 매핑합니다.
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("file", resource);
-        body.add("space_id", spaceId.toString());
-        body.add("user_id", userId.toString());
+        body.add("space_id", param.getSpaceId().toString());
+        body.add("user_id", reqUserId.toString());
 
+        // HTTP 헤더 설정
         HttpHeaders headers = new HttpHeaders();
+        // 파일 전송을 위한 멀티파트 폼 데이터 타입 지정
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-        headers.add("ngrok-skip-browser-warning", "true");
+        headers.add("ngrok-skip-browser-warning", "true"); // [ngrok 사용 시] 발생하는 경고창을 우회하기 위한 커스텀 헤더
 
+        // 파이썬 서버의 '/ingest' 엔드포인트로 파일 전송 (POST)
+        // 응답 본문이 딱히 필요하지 않으므로 String.class로 받아 처리만 넘깁니다.
         HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
         pythonRestTemplate.postForEntity("/ingest", entity, String.class);
     }
