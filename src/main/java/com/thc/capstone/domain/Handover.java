@@ -8,32 +8,42 @@ import jakarta.persistence.Lob;
 import lombok.Getter;
 import lombok.Setter;
 
-// 인수인계 문서를 저장하는 데이터베이스 테이블과 연결된 클래스
+/**
+ * 인수인계 문서 엔티티
+ *
+ * 업무 인수인계 시 작성되는 문서를 저장한다.
+ * 각 문서는 하나의 UserSpace에 귀속되며, 해당 UserSpace 소유자만 수정할 수 있다.
+ */
 @Getter
 @Entity
 public class Handover extends AuditingFields {
 
     @Setter
-    private String title; // 인수인계서 제목 (예: "총무 인수인계서")
+    private String title;
 
     @Setter
-    private String role; // 역할명 (예: "총무", "회장")
+    private String role;
 
+    /**
+     * 인수인계 내용을 JSON 형태로 저장한다.
+     * 모듈 배열, 제목, 역할 등의 구조화된 데이터가 포함된다.
+     */
     @Setter
     @Lob
     @Column(columnDefinition = "TEXT")
-    private String text; // 인수인계 내용을 JSON 형태로 저장
+    private String text;
 
     @Setter
-    private Long userSpaceId; // 이 문서가 속한 UserSpace의 ID
+    private Long userSpaceId;
 
+    /**
+     * 폴더 ID. null이면 루트 폴더에 위치한다.
+     */
     @Setter
-    private Long folderId; // 이 문서가 속한 폴더의 ID (null이면 루트)
+    private Long folderId;
 
-    // JPA에서 필요한 기본 생성자 (외부에서 직접 호출 불가)
     protected Handover() {}
 
-    // 모든 필드를 받아서 객체를 만드는 생성자 (of 메서드에서만 사용)
     private Handover(String title, String role, String text, Long userSpaceId) {
         this.title = title;
         this.role = role;
@@ -41,12 +51,17 @@ public class Handover extends AuditingFields {
         this.userSpaceId = userSpaceId;
     }
 
-    // Handover 객체를 만들 때 사용하는 메서드 (new 대신 이것 사용)
+    /**
+     * 인수인계 문서 인스턴스를 생성한다.
+     */
     public static Handover of(String title, String role, String text, Long userSpaceId) {
         return new Handover(title, role, text, userSpaceId);
     }
 
-    // 인수인계 문서 내용을 수정할 때 사용하는 메서드
+    /**
+     * 전달된 파라미터 중 null이 아닌 필드만 업데이트한다.
+     * 부분 수정(PATCH) 패턴을 지원한다.
+     */
     public void update(HandoverDto.UpdateReqDto param) {
         if (param.getDeleted() != null) {
             setDeleted(param.getDeleted());
@@ -62,7 +77,9 @@ public class Handover extends AuditingFields {
         }
     }
 
-    // 문서 생성 후 클라이언트에게 ID를 반환할 때 사용하는 메서드
+    /**
+     * 문서 생성 후 클라이언트에게 반환할 응답 DTO를 생성한다.
+     */
     public DefaultDto.CreateResDto toCreateResDto() {
         return DefaultDto.CreateResDto.builder()
                 .id(getId())
