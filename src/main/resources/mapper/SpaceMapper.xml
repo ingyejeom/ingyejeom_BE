@@ -21,7 +21,7 @@
     <sql id="commonWhere">
         WHERE space.id is not null
         <if test = 'deleted != null'>AND space.deleted = #{deleted}</if>
-        <if test = 'workName != null and workName !=" "'>AND space.work_name LIKE CONCAT('%', #{workName})</if>
+        <if test = 'workName != null and workName !=""'>AND space.work_name LIKE CONCAT('%', #{workName}, '%')</if>
     </sql>
 
     <select id="list" parameterType="hashMap"

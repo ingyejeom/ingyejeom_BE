@@ -33,38 +33,41 @@ public class UserSpaceServiceImpl implements UserSpaceService {
         Space space = spaceRepository.findBySpaceCode(param.getSpaceCode())
                 .orElseThrow(() -> new RuntimeException("유효하지 않은 스페이스 코드입니다."));
 
-        // 현재 Space의 주인 찾기
+        // 현재 Space 의 인계자 찾기
         List<UserSpace> activeUsers = userSpaceRepository.findAllBySpaceIdAndRoleAndStatus(
                 space.getId(), Role.USER, UserSpaceStatus.ACTIVE
         );
 
         for (UserSpace activeUser : activeUsers) {
-            // Space 주인이 본인이면 에러
+            // Space 주인이 본인이면 예외 발생
             if (activeUser.getUserId().equals(reqUserId)) {
                 throw new RuntimeException("이미 참여 중인 스페이스입니다.");
             }
 
-            // Space 주인이 본인이 아니라면 해당 유저를 INACTIVE
-            activeUser.setStatus(UserSpaceStatus.INACTIVE);
+            // Space 인계자가 본인이 아니라면 해당 유저를 INACTIVE
+            activeUser.update(UserSpaceDto.UpdateReqDto.builder()
+                    .status(UserSpaceStatus.INACTIVE)
+                    .build());
         }
 
-        // 이전에 Space에 들어왔던 적이 있는지 확인
+        // 이전에 Space 에 들어왔던 적이 있는지 확인
         UserSpace myUserSpace = userSpaceRepository.findByUserIdAndSpaceIdAndRole(
                 reqUserId, space.getId(), Role.USER
         ).orElse(null);
 
         if (myUserSpace != null) {
-            // Space에 들어왔다가 INACTIVE 됐다면 다시 ACTIVE
-            myUserSpace.setStatus(UserSpaceStatus.ACTIVE);
+            // Space 에 들어왔던 적 있으면 INACTIVE 에서 다시 ACTIVE 로 변경
+            myUserSpace.update(UserSpaceDto.UpdateReqDto.builder()
+                    .status(UserSpaceStatus.ACTIVE)
+                    .build());
         } else {
-            // 처음 들어오는 경우에는 생성
-            UserSpace newUserSpace = UserSpace.of(
-                    Role.USER,
-                    UserSpaceStatus.ACTIVE,
-                    reqUserId,
-                    space.getId()
-            );
-            userSpaceRepository.save(newUserSpace);
+            // 처음 들어오는 경우에는 새로운 유저-스페이스 생성
+            create(UserSpaceDto.CreateReqDto.builder()
+                    .role(Role.USER)
+                    .status(UserSpaceStatus.ACTIVE)
+                    .userId(reqUserId)
+                    .spaceId(space.getId())
+                    .build());
         }
     }
 
@@ -72,44 +75,49 @@ public class UserSpaceServiceImpl implements UserSpaceService {
     @Override
     @Transactional
     public void invite(UserSpaceDto.InviteReqDto param, Long reqUserId) {
+        // 사용자 이메일 존재 여부 검증
         User targetUser = userRepository.findByEmail(param.getEmail())
                 .orElseThrow(() -> new RuntimeException("해당 이메일을 가진 유저가 없습니다."));
 
+        // 스페이스 존재 여부 검증
         Space space = spaceRepository.findById(param.getSpaceId())
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 스페이스입니다."));
 
-        // Space의 주인 찾기
+        // Space 의 현재 인계자 찾기
         List<UserSpace> activeUsers = userSpaceRepository.findAllBySpaceIdAndRoleAndStatus(
                 space.getId(), Role.USER, UserSpaceStatus.ACTIVE
         );
 
         for (UserSpace activeUser : activeUsers) {
-            // Space의 주인이 초대하려는 유저라면 에러
+            // Space 의 인계자가 초대하려는 유저라면 에러
             if (activeUser.getUserId().equals(targetUser.getId())) {
                 throw new RuntimeException("이미 해당 스페이스에 참여 중인 유저입니다.");
             }
 
-            // Space의 주인이 초대하려는 유저가 아니라면 현재 유저 INACTIVE
-            activeUser.setStatus(UserSpaceStatus.INACTIVE);
+            // Space 의 인계자가 초대하려는 유저가 아니라면 현재 유저 INACTIVE
+            activeUser.update(UserSpaceDto.UpdateReqDto.builder()
+                            .status(UserSpaceStatus.INACTIVE)
+                            .build());
         }
 
-        // 초대하려는 유저가 이전에 Space에 들어온 적 있는지 확인
+        // 초대하려는 유저가 이전에 Space 에 들어온 적 있는지 확인
         UserSpace targetUserSpace = userSpaceRepository.findByUserIdAndSpaceIdAndRole(
                 targetUser.getId(), space.getId(), Role.USER
         ).orElse(null);
 
         if (targetUserSpace != null) {
-            // 들어왔던 적 있다면 INACTIVE를 ACTIVE로 변경
-            targetUserSpace.setStatus(UserSpaceStatus.ACTIVE);
+            // 들어왔던 적 있다면 INACTIVE 를 ACTIVE 로 변경
+            targetUserSpace.update(UserSpaceDto.UpdateReqDto.builder()
+                    .status(UserSpaceStatus.ACTIVE)
+                    .build());
         } else {
             // 처음이면 생성
-            UserSpace newUserSpace = UserSpace.of(
-                    Role.USER,
-                    UserSpaceStatus.ACTIVE,
-                    targetUser.getId(),
-                    space.getId()
-            );
-            userSpaceRepository.save(newUserSpace);
+            create(UserSpaceDto.CreateReqDto.builder()
+                    .role(Role.USER)
+                    .status(UserSpaceStatus.ACTIVE)
+                    .userId(reqUserId)
+                    .spaceId(space.getId())
+                    .build());
         }
     }
 
@@ -120,9 +128,11 @@ public class UserSpaceServiceImpl implements UserSpaceService {
 
     @Override
     public void update(UserSpaceDto.UpdateReqDto param) {
+        // 유저-스페이스 검증
         UserSpace userSpace = userSpaceRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("데이터가 없습니다"));
 
+        // 변경된 정보 적용 및 DB 저장
         userSpace.update(param);
         userSpaceRepository.save(userSpace);
     }
@@ -135,6 +145,7 @@ public class UserSpaceServiceImpl implements UserSpaceService {
                 .build());
     }
 
+    // Mapper 를 이용한 사용자 정보 조회 함수
     public UserSpaceDto.DetailResDto get(DefaultDto.DetailReqDto param) {
         return userSpaceMapper.detail(param.getId());
     }
@@ -144,9 +155,7 @@ public class UserSpaceServiceImpl implements UserSpaceService {
         return get(param);
     }
 
-    /**
-     * 함수를 통해 반환한 리스트의 ID를 재리스트화
-     */
+    // Mapper 를 통해 받은 사용자 리스트의 ID 값을 이용해 객체 리스트로 넘김
     public List<UserSpaceDto.DetailResDto> addlist(List<UserSpaceDto.DetailResDto> list){
         List<UserSpaceDto.DetailResDto> newList = new ArrayList<>();
         for(UserSpaceDto.DetailResDto userSpace : list) {
@@ -158,13 +167,20 @@ public class UserSpaceServiceImpl implements UserSpaceService {
         return newList;
     }
 
+    // 대시보드에 현재 사용자가 속한 스페이스를 띄우기 위해 맞춤화 됨
     @Override
     public List<UserSpaceDto.DetailResDto> list(UserSpaceDto.ListReqDto param, Long reqUserId) {
+        // Mapper 쿼리에 전달할 파라미너 맵 구성
         Map<String, Object> map = new HashMap<>();
+
+        // 필수 필터 조건 설정
         map.put("reqUserId", reqUserId);
         map.put("deleted", false);
+
+        // 요청한 상태 적용 (기본 : ACTIVE)
         map.put("status", param.getStatus() != null ? param.getStatus() : "ACTIVE");
 
+        // 역할과 속한 그룹 필터링
         if(param.getRole() != null){
             map.put("role", param.getRole());
         }
@@ -173,6 +189,7 @@ public class UserSpaceServiceImpl implements UserSpaceService {
             map.put("groupId", param.getGroupId());
         }
 
+        // N + 1 문제 방지를 위해 ID 목록 조회
         List<UserSpaceDto.DetailResDto> idList = userSpaceMapper.list(map);
 
         return addlist(idList);

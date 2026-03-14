@@ -12,16 +12,17 @@ import com.thc.capstone.repository.UserRepository;
 import com.thc.capstone.repository.UserSpaceRepository;
 import com.thc.capstone.service.PermittedService;
 import com.thc.capstone.service.SpaceService;
+import com.thc.capstone.service.UserSpaceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -34,54 +35,56 @@ public class SpaceServiceImpl implements SpaceService {
     final PermittedService permittedService;
     final UserRepository userRepository;
 
+    final UserSpaceService userSpaceService;
+
     // 스페이스 수정 시 권한 체크를 위함
     final UserSpaceMapper userSpaceMapper;
 
     String target = "space";
-
-    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    private static final int CODE_LENGTH = 8; // 코드 길이 (예: 8자리)
-    private final SecureRandom random = new SecureRandom();
 
     @Override
     @Transactional
     public DefaultDto.CreateResDto create(SpaceDto.CreateReqDto param, Long reqUserId) {
 //        permittedService.check(target, 110, reqUserId);
 
+        // 로그인이 되어있지 않을 시 예외 발생
         if (reqUserId == null) {
             throw new RuntimeException("로그인이 필요한 서비스입니다.");
         }
 
+        // 스페이스 생성과 유저 스페이스 생성을 한 묶음으로 처리
         try{
+            // 존재하는 그룹인지 검증
             Group group = groupRepository.findById(param.getGroupId())
                     .orElseThrow(() -> new RuntimeException("존재하지 않는 그룹"));
 
-            String uniqueSpaceCode;
-            do {
-                uniqueSpaceCode = generateRandomCode();
-            } while (spaceRepository.existsBySpaceCode(uniqueSpaceCode));
+            // 스페이스 코드를 UUID 로 Unique 하게 생성
+            String uniqueSpaceCode = UUID.randomUUID().toString();
 
-             Space space = Space.of(param.getWorkName(), uniqueSpaceCode, group.getId());
-             spaceRepository.save(space);
+            // 스페이스 생성 및 DB 저장
+            Space space = Space.of(param.getWorkName(), uniqueSpaceCode, group.getId());
+            spaceRepository.save(space);
 
-            UserSpace userSpace = UserSpace.of(
-                    Role.ADMIN,
-                    UserSpaceStatus.ACTIVE,
-                    reqUserId,
-                    space.getId()
-            );
-            userSpaceRepository.save(userSpace);
+            // 관리자 역할의 유저 스페이스 생성 및 DB 저장
+            userSpaceService.create(UserSpaceDto.CreateReqDto.builder()
+                    .role(Role.ADMIN)
+                    .status(UserSpaceStatus.ACTIVE)
+                    .userId(reqUserId)
+                    .spaceId(space.getId())
+                    .build());
 
+            // 사용자 역할의 유저 스페이스 생성 및 DB 저장
+                // 입력한 유저 이메일이 있다면 해당 유저에게 할당
+                // 그렇지 않다면 요청한 유저에게 할당
             if(param.getUserEmail() != null && !param.getUserEmail().trim().isEmpty()){
                 userRepository.findByEmail(param.getUserEmail())
                         .ifPresent(assignee -> {
-                            UserSpace assigneeUserSpace = UserSpace.of(
-                                    Role.USER,
-                                    UserSpaceStatus.ACTIVE,
-                                    assignee.getId(),
-                                    space.getId()
-                            );
-                            userSpaceRepository.save(assigneeUserSpace);
+                            userSpaceService.create(UserSpaceDto.CreateReqDto.builder()
+                                    .role(Role.USER)
+                                    .status(UserSpaceStatus.ACTIVE)
+                                    .userId(assignee.getId())
+                                    .spaceId(space.getId())
+                                    .build());
                         });
             }
 
@@ -92,25 +95,18 @@ public class SpaceServiceImpl implements SpaceService {
         }
     }
 
-    // 코드를 랜덤으로 생성
-    private String generateRandomCode() {
-        StringBuilder sb = new StringBuilder(CODE_LENGTH);
-        for (int i = 0; i < CODE_LENGTH; i++) {
-            int index = random.nextInt(CHARACTERS.length());
-            sb.append(CHARACTERS.charAt(index));
-        }
-        return sb.toString();
-    }
-
     @Override
     public void update(SpaceDto.UpdateReqDto param, Long reqUserId) {
+        // 존재하는 스페이스인지 검증
         Space space = spaceRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("데이터가 없습니다"));
 
-        if (!userSpaceMapper.isSpaceAdmin(Map.of("userId", reqUserId, "spaceId", space.getId()))) {
+        // 스페이스 관리 권한 검증
+        if (!userSpaceMapper.isSpaceActive(Map.of("userId", reqUserId, "spaceId", space.getId()))) {
             permittedService.check(target, 120, reqUserId);
         }
 
+        // 수정 적용 및 DB 저장
         space.update(param);
         spaceRepository.save(space);
     }
@@ -123,6 +119,7 @@ public class SpaceServiceImpl implements SpaceService {
                 .build(), reqUserId);
     }
 
+    // Mapper 를 이용한 사용자 정보 조회 함수
     public SpaceDto.DetailResDto get(DefaultDto.DetailReqDto param, Long reqUserId) {
 //        permittedService.check(target, 200, reqUserId);
 
@@ -136,9 +133,7 @@ public class SpaceServiceImpl implements SpaceService {
         return get(param, reqUserId);
     }
 
-    /**
-     * 함수를 통해 반환한 리스트의 ID를 재리스트화
-     */
+    // Mapper 를 통해 받은 사용자 리스트의 ID 값을 이용해 객체 리스트로 넘김
     public List<SpaceDto.DetailResDto> addlist(List<SpaceDto.DetailResDto> list, Long reqUserId){
         List<SpaceDto.DetailResDto> newList = new ArrayList<>();
         for(SpaceDto.DetailResDto space : list) {

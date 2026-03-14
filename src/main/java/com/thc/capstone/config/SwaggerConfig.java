@@ -21,8 +21,8 @@ public class SwaggerConfig {
 
     private Info apiInfo(){
         return new Info()
-                .title("프로젝트 이름")
-                .description("프로젝트 설명")
+                .title("인계점")
+                .description("26년도 1학기 팀 삼동소바의 캡스톤 프로젝트 '인계점'의 Swagger 입니다.")
                 .version("1.0.0");
     }
 

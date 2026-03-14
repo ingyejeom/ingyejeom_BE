@@ -8,17 +8,25 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 public class UserDto {
+    /**
+     * REQUEST
+     * 로그인 데이터
+     */
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor
     public static class LoginReqDto {
         String username;
         String password;
     }
 
+    /**
+     * REQUEST
+     * 사용자 생성 데이터 (신규 회원가입)
+     */
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor
     public static class CreateReqDto {
-        String username;
+        String username; // 로그인 ID
         String password;
-        String name;
+        String name; // 사용자 실명
         String email;
 
         public User toEntity(){
@@ -26,6 +34,10 @@ public class UserDto {
         }
     }
 
+    /**
+     * REQUEST
+     * 사용자 정보 수정 데이터
+     */
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class UpdateReqDto extends DefaultDto.UpdateReqDto {
         String password;
@@ -33,6 +45,10 @@ public class UserDto {
         String email;
     }
 
+    /**
+     * RESPONSE
+     * 사용자 상세 데이터
+     */
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class DetailResDto extends DefaultDto.DetailResDto {
         String username;
@@ -40,10 +56,14 @@ public class UserDto {
         String email;
     }
 
+    /**
+     * REQUEST
+     * 사용자 목록 조회 시 검색 데이터
+     */
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class ListReqDto extends DefaultDto.ListReqDto {
         /**
-         * 이후 검색 기능을 구현할 때 넣을 것
+         * 검색 조건 : 사용자 이름 (중간 글자 검색 가능)
          */
         String name;
     }

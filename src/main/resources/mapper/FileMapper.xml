@@ -8,9 +8,13 @@
         created_at as createdAt,
         'FOLDER' as type,
         name as name,
+
+        <!-- 파일과 컬럼 수를 맞추기 위해 null 값을 넣음 -->
         NULL as fileUrl,
         NULL as size,
         NULL as uploaderName
+        <!-- -->
+
         FROM folder
         WHERE space_id = #{spaceId}
         AND deleted = false
@@ -26,7 +30,11 @@
         f.original_file_name as name,
         f.file_url as fileUrl,
         f.size as size,
+
+        <!-- 파일을 올린 사람 -->
         u.name as uploaderName
+        <!-- -->
+
         FROM tb_file f
         JOIN user_space us ON f.user_space_id = us.id
         JOIN user u ON us.user_id = u.id
