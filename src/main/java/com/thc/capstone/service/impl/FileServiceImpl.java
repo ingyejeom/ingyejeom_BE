@@ -64,11 +64,10 @@ public class FileServiceImpl implements FileService {
 
         // 파일이 저장된 경로
         String fullPath = fileDir + storeFileName;
-
-        // 업로드된 파일을 디스크에 저장하기 위해, 저장될 경로와 파일명을 포함하는 File 객체를 생성
+        // 파일 저장 경로를 제어하기 위해 String 경로 대신 java.io.File 객체로 생성합니다.
         java.io.File saveFile = new java.io.File(fullPath);
 
-        // 파일을 저장할 디렉토리(예: C:/files/)가 존재하지 않을 경우, 해당 디렉토리를 생성
+        // 지정된 경로에 폴더가 존재하지 않으면 mkdirs()를 호출하여 필요한 모든 상위 디렉토리를 자동으로 생성합니다. (FileNotFoundException 방지)
         if (!saveFile.getParentFile().exists()) {
             saveFile.getParentFile().mkdirs();
         }
@@ -89,9 +88,11 @@ public class FileServiceImpl implements FileService {
                 userSpace.getId(),
                 param.getFolderId()
         );
+
         fileRepository.save(file);
 
         return fullPath;
+        // 파일 저장이 성공한 경우 파이썬에 넘기기 위해 저장 경로를 반환하는 로직을 추가했습니다.
     }
 
     @Override

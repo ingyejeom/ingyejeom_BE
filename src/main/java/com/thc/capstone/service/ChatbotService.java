@@ -8,6 +8,6 @@ import java.util.List;
 @Service
 public interface ChatbotService {
     ChatbotDto.ChatResDto askChatbot(ChatbotDto.ChatReqDto param, Long reqUserId);
-    void ingestRequest(Long userId, Long spaceId, byte[] fileBytes, String fileName);
+    void ingestRequest(ChatbotDto.IngestReqDto param, Long reqUserId);
     List<ChatbotDto.HistoryResDto> getHistory(Long spaceId, Long reqUserId);
 }
