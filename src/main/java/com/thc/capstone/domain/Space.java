@@ -11,12 +11,23 @@ import lombok.Setter;
 @Getter
 @Entity
 public class Space extends AuditingFields {
+    /**
+     * 업무 이름
+     * - 스페이스 이름 : {그룹 이름} {업무 이름}
+     */
     @Setter
     String workName;
 
+    /**
+     * 스페이스 코드
+     * - 형식 :
+     */
     @Setter
     String spaceCode;
 
+    /**
+     * 속한 그룹 ID (FK)
+     */
     @Setter
     Long groupId;
 
@@ -31,6 +42,10 @@ public class Space extends AuditingFields {
         return new Space(workName, spaceCode, groupId);
     }
 
+    /**
+     * 스페이스 수정
+     * 수정 항목 : 업무 이름
+     */
     public void update(SpaceDto.UpdateReqDto param){
         if(param.getDeleted() != null){
             setDeleted(param.getDeleted());

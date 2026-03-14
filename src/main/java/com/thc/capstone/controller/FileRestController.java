@@ -5,6 +5,7 @@ import com.thc.capstone.dto.FileDto;
 import com.thc.capstone.security.PrincipalDetails;
 import com.thc.capstone.service.ChatbotService;
 import com.thc.capstone.service.FileService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -28,6 +29,7 @@ public class FileRestController {
     final FileService fileService;
     private final ChatbotService chatbotService;
 
+    // 요청한 사용자 ID 추출
     public Long getUserId(PrincipalDetails principalDetails) {
         if(principalDetails != null && principalDetails.getUser() != null) {
             return principalDetails.getUser().getId();
@@ -37,36 +39,32 @@ public class FileRestController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "파일 업로드",
+            description = "파일과 함께 spaceId, folderId(선택)를 FormData 형식으로 전송합니다.")
     public ResponseEntity<Void> upload(
-            @RequestPart("file") MultipartFile file,
-            @RequestPart("spaceId") String spaceId, // FormData는 문자열로 옴
-            @RequestParam(value = "folderId", required = false) String folderId,
+            @ModelAttribute FileDto.UploadReqDto param,
             @AuthenticationPrincipal PrincipalDetails principal
     ) {
-        Long fId = (folderId == null || folderId.equals("null") || folderId.isEmpty()) ? null : Long.parseLong(folderId);
-        Long sId = Long.parseLong(spaceId);
-
-        FileDto.UploadReqDto req = FileDto.UploadReqDto.builder()
-                .file(file)
-                .spaceId(sId)
-                .folderId(fId)
-                .build();
-
-        String savedFilePath = fileService.upload(req, principal.getUser().getId());
+        String savedFilePath = fileService.upload(param, getUserId(principal));
         if(savedFilePath != null && !savedFilePath.isEmpty()) {
-            chatbotService.ingestRequest(sId, savedFilePath);
+            // 파일이 성공적으로 저장되면, 해당 파일 경로를 Chatbot 서비스로 전달하여 처리
+            chatbotService.ingestRequest(param.getSpaceId(), savedFilePath);
         }
 
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/folder")
+    @Operation(summary = "폴더 생성",
+            description = "새로운 폴더를 생성합니다. 부모 폴더 ID를 지정하여 트리 구조를 만들 수 있습니다.")
     public ResponseEntity<Void> createFolder(@RequestBody FileDto.CreateFolderReqDto param, @AuthenticationPrincipal PrincipalDetails principal) {
         fileService.createFolder(param, getUserId(principal));
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("")
+    @Operation(summary = "파일 삭제",
+            description = "지정된 ID의 파일을 삭제합니다. (Soft Delete)")
     public ResponseEntity<Void> deleteFile(@RequestBody DefaultDto.UpdateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         fileService.deleteFile(param, getUserId(principalDetails));
 
@@ -74,17 +72,23 @@ public class FileRestController {
     }
 
     @DeleteMapping("/folder")
-    public ResponseEntity<Void> deleteFolder(@RequestBody DefaultDto.UpdateReqDto param, @AuthenticationPrincipal PrincipalDetails principal) {
+    @Operation(summary = "폴더 삭제",
+            description = "지정된 ID의 폴더를 삭제합니다. (Soft Delete)")
+    public ResponseEntity<Void> deleteFolder(@RequestBody FileDto.FolderUpdateReqDto param, @AuthenticationPrincipal PrincipalDetails principal) {
         fileService.deleteFolder(param, getUserId(principal));
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/list")
-    public ResponseEntity<List<FileDto.DetailResDto>> list(FileDto.ListReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+    @Operation(summary = "파일 및 폴더 목록 조회",
+            description = "특정 스페이스 또는 폴더에 속한 파일과 폴더의 목록을 조회합니다.")
+    public ResponseEntity<List<FileDto.ItemResDto>> list(FileDto.ListReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         return ResponseEntity.ok(fileService.list(param, getUserId(principalDetails)));
     }
 
     @GetMapping("/{fileId}")
+    @Operation(summary = "파일 다운로드 또는 보기",
+            description = "파일 ID를 통해 파일을 다운로드하거나 브라우저에서 바로 봅니다. mode 에 download 혹은 view 지정 (default: download)")
     public ResponseEntity<Resource> download(
             @PathVariable Long fileId,
             @RequestParam(required = false, defaultValue = "download") String mode,
@@ -118,6 +122,8 @@ public class FileRestController {
     }
 
     @PutMapping("/move")
+    @Operation(summary = "파일 또는 폴더 이동",
+            description = "파일 또는 폴더를 다른 폴더로 이동시킵니다. type 에 file 인지 folder 인지 지정합니다.")
     public ResponseEntity<Void> move(@RequestBody FileDto.MoveReqDto param, @AuthenticationPrincipal PrincipalDetails principal) {
         fileService.move(param, getUserId(principal));
         return ResponseEntity.ok().build();

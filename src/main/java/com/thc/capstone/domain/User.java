@@ -9,17 +9,30 @@ import lombok.Setter;
 
 @Entity @Getter
 public class User extends AuditingFields {
+    /**
+     * 로그인 ID (Unique)
+     */
     @Setter
     @Column(nullable = false, unique = true)
     String username;
 
+    /**
+     * 로그인 비밀번호 (Encrypted 로 관리)
+     */
     @Setter
     @Column(nullable = false)
     String password;
 
+    /**
+     * 사용자 이름
+     */
     @Setter
     String name;
 
+    /**
+     * 사용자 이메일 (Unique)
+     * - 향후 이메일 검색 등을 위해 Unique 하게 관리
+     */
     @Setter
     @Column(nullable = false, unique = true)
     String email;
@@ -36,6 +49,10 @@ public class User extends AuditingFields {
         return new User(username, password, name, email);
     }
 
+    /**
+     * 사용자 정보 수정
+     * 수정 가능 항목 : 비밀번호, 이름, 이메일
+     */
     public void update(UserDto.UpdateReqDto param){
         if(param.getDeleted() != null){
             setDeleted(param.getDeleted());

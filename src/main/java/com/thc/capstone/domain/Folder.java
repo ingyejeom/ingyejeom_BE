@@ -1,6 +1,6 @@
 package com.thc.capstone.domain;
 
-import com.thc.capstone.dto.UserDto;
+import com.thc.capstone.dto.FileDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import lombok.Getter;
@@ -9,13 +9,23 @@ import lombok.Setter;
 @Getter
 @Entity
 public class Folder extends AuditingFields{
+    /**
+     * 폴더 이름
+     */
     @Setter
     @Column(nullable = false)
     private String name;
 
+    /**
+     * 부모 폴더 ID
+     * - 트리형 구조
+     */
     @Setter
     private Long parentId;
 
+    /**
+     * 속한 스페이스 ID (FK)
+     */
     @Column(nullable = false)
     private Long spaceId;
 
@@ -31,13 +41,16 @@ public class Folder extends AuditingFields{
         return new Folder(parentId, name, spaceId);
     }
 
-    public void delete(){
-        this.setDeleted(true);
-    }
-
-    public void update(String name){
-        if(name != null && !name.isEmpty()){
-            this.name = name;
+    /**
+     * 폴더 수정
+     * 수정 항목 : 이름
+     */
+    public void update(FileDto.FolderUpdateReqDto param){
+        if(param.getName() != null){
+            setName(param.getName());
+        }
+        if(param.getDeleted() != null){
+            setDeleted(param.getDeleted());
         }
     }
 }

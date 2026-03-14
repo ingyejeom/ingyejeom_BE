@@ -11,6 +11,9 @@ import lombok.Setter;
 @Entity
 @Table(name = "tb_group")
 public class Group extends AuditingFields {
+    /**
+     * 그룹 이름
+     */
     @Setter
     String groupName;
 
@@ -23,6 +26,10 @@ public class Group extends AuditingFields {
         return new Group(groupName);
     }
 
+    /**
+     * 그룹 수정
+     * 수정 항목 : 그룹 이름
+     */
     public void update(GroupDto.UpdateReqDto param){
         if(param.getDeleted() != null){
             setDeleted(param.getDeleted());

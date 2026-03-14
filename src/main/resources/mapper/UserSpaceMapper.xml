@@ -7,6 +7,7 @@
              , user_space.deleted
              , user_space.created_at as createdAt
              , user_space.modified_at as modifiedAt
+
              , user_space.role
              , user_space.status
              , user_space.user_id as userId
@@ -14,6 +15,7 @@
 
             , space.work_name as workName
             , space.space_code as spaceCode
+
             , tb_group.group_name as groupName
             , tb_group.id as groupId
         FROM user_space
@@ -55,12 +57,11 @@
           AND us.role = 'ADMIN'
     </select>
 
-    <select id="isSpaceAdmin" parameterType="hashMap" resultType="boolean">
+    <select id="isSpaceActive" parameterType="hashMap" resultType="boolean">
         SELECT COUNT(*) > 0
         FROM user_space
         WHERE user_id = #{userId}
           AND space_id = #{spaceId}
-          AND role = 'ADMIN'
           AND status = 'ACTIVE'
     </select>
 

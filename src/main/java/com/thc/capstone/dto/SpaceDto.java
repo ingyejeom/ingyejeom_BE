@@ -11,30 +11,36 @@ import lombok.experimental.SuperBuilder;
 import java.util.List;
 
 public class SpaceDto {
-
+    /**
+     * REQUEST
+     * 스페이스 생성 데이터
+     */
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class CreateReqDto {
         String workName;
         String spaceCode;
-        Long groupId;
-        String userEmail;
+        Long groupId; // (FK)
+
+        String userEmail; // 이메일로 사용자를 조회하여 UserSpace 생성
 
         public Space toEntity(){
             return Space.of(getWorkName(), getSpaceCode(), getGroupId());
         }
     }
 
-    @Getter @Setter @NoArgsConstructor @AllArgsConstructor
-    public static class CreateResDto extends DefaultDto.CreateResDto {
-        String workName;
-        String spaceCode;
-    }
-
+    /**
+     * REQUEST
+     * 스페이스 정보 수정 데이터
+     */
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class UpdateReqDto extends DefaultDto.UpdateReqDto {
         String workName;
     }
 
+    /**
+     * RESPONSE
+     * 스페이스 상세 데이터
+     */
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class DetailResDto extends DefaultDto.DetailResDto {
         String workName;
@@ -43,10 +49,14 @@ public class SpaceDto {
         String groupName;
     }
 
+    /**
+     * REQUEST
+     * 스페이스 목록 조회 시 검색 데이터
+     */
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class ListReqDto extends DefaultDto.ListReqDto {
         /**
-         * 이후 검색 기능을 구현할 때 넣을 것
+         * 검색 조건 : 업무명 (중간 글자 검색 가능)
          */
         String workName;
     }

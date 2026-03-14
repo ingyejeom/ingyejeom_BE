@@ -11,17 +11,31 @@ import lombok.Setter;
 @Getter
 @Entity
 public class UserSpace extends AuditingFields {
+    /**
+     * 사용자 권한
+     * 요소 : ADMIN, USER
+     */
     @Setter
     @Enumerated(EnumType.STRING)
     Role role;
 
+    /**
+     * 사용자-스페이스 상태
+     * 요소 : ACTIVE, INACTIVE
+     */
     @Setter
     @Enumerated(EnumType.STRING)
     UserSpaceStatus status;
 
+    /**
+     * 사용자 ID (FK)
+     */
     @Setter
     Long userId;
 
+    /**
+     * 스페이스 ID (FK)
+     */
     @Setter
     Long spaceId;
 
@@ -40,6 +54,12 @@ public class UserSpace extends AuditingFields {
     public void update(UserSpaceDto.UpdateReqDto param){
         if(param.getDeleted() != null){
             setDeleted(param.getDeleted());
+        }
+        if(param.getRole() != null){
+            setRole(param.getRole());
+        }
+        if(param.getStatus() != null){
+            setStatus(param.getStatus());
         }
     }
 

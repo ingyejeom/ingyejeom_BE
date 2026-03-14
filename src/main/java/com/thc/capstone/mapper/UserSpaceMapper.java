@@ -13,5 +13,5 @@ public interface UserSpaceMapper {
     boolean isGroupAdmin(Map<String, Object> param);
 
     // 스페이스 수정 권한 확인
-    boolean isSpaceAdmin(Map<String, Object> param);
+    boolean isSpaceActive(Map<String, Object> param);
 }

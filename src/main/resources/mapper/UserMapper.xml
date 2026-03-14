@@ -15,21 +15,21 @@
         WHERE user.id = #{id}
     </select>
 
-    <select id="list" parameterType="hashMap"
-            resultType="com.thc.capstone.dto.UserDto$DetailResDto">
-        SELECT user.id
-        FROM user
-        WHERE user.id is not null
-        <if test="deleted != null">AND user.deleted = #{deleted}</if>
-    </select>
-
     <!--  공통 WHERE 절  -->
+    <!--  사용법  -->
+    <!--  <include refid="commonWhere"/>  -->
     <sql id="commonWhere">
         WHERE user.id is not null
         <if test = "deleted != null">AND user.deleted = #{deleted}</if>
-        <if test = "phone != null and phone !=' '">AND user.phone LIKE CONCAT('%', #{phone})</if>
+        <if test = "name != null and name !=''">AND user.name LIKE CONCAT('%', #{name}, '%')</if>
     </sql>
 
-    <!--  사용법  -->
-    <!--  <include refid="commonWhere"/>  -->
+    <select id="list" parameterType="hashMap"
+    resultType="com.thc.capstone.dto.UserDto$DetailResDto">
+        SELECT user.id
+        FROM user
+        WHERE user.id is not null
+        <include refid="commonWhere"/>
+    </select>
+
 </mapper>

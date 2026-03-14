@@ -7,6 +7,7 @@
              , tb_group.deleted
              , tb_group.created_at as createdAt
              , tb_group.modified_at as modifiedAt
+
              , tb_group.group_name as groupName
         FROM tb_group
         WHERE tb_group.id = #{id}
@@ -16,7 +17,7 @@
     <sql id="commonWhere">
         WHERE tb_group.id is not null
         <if test = 'deleted != null'>AND tb_group.deleted = #{deleted}</if>
-        <if test = 'groupName != null and groupName !=" "'>AND tb_group.group_name LIKE CONCAT('%', #{groupName})</if>
+        <if test = 'groupName != null and groupName !=""'>AND tb_group.group_name LIKE CONCAT('%', #{groupName}, '%')</if>
     </sql>
 
     <select id="list" parameterType="hashMap"
