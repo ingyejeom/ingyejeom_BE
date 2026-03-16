@@ -55,4 +55,19 @@ public interface UserSpaceService {
      * @return 유저-스페이스의 상세 데이터 리스트 (역할, 상태, 유저 ID, 스페이스 ID, 그룹 ID, 그룹 이름, 업무 이름, 스페이스 코드)
      */
     List<UserSpaceDto.DetailResDto> list(UserSpaceDto.ListReqDto param, Long reqUserId);
+
+    /**
+     * 대시보드에 띄울 스페이스 조회
+     * @param reqUserId 요청한 사용자 ID
+     * @return 현재 접속 중인 사용자가 USER 로 존재하는 스페이스 리스트
+     */
+    List<UserSpaceDto.DetailResDto> getDashboardSpaces(Long reqUserId);
+
+    /**
+     * 그룹 관리에 띄울 스페이스 조회
+     * @param param 필터 검색 조건 (속해있는 그룹)
+     * @param reqUserId 요청한 사용자 ID
+     * @return 요청하는 그룹에서 사용자가 ADMIN 으로 존재하는 스페이스 리스트
+     */
+    List<UserSpaceDto.DetailResDto> getAdminSpaces(UserSpaceDto.ListReqDto param, Long reqUserId);
 }

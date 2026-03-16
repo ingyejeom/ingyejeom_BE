@@ -78,10 +78,26 @@ public class UserSpaceRestController {
     }
 
     @PreAuthorize("hasRole('USER')")
-    @Operation(summary = "대시보드에 스페이스 리스트 조회",
-            description = "대시보드에 현재 로그인한 유저가 속한 스페이스들을 조회합니다.")
+    @Operation(summary = "스페이스 리스트 조회",
+            description = "status, role, groupId 등을 통한 필터링으로 필요한 스페이스 리스트를 조회합니다.<br>본 서비스에서는 보통 프로필에서 스페이스 리스트를 볼 때 사용합니다.")
     @GetMapping("/list")
     public ResponseEntity<List<UserSpaceDto.DetailResDto>> list(UserSpaceDto.ListReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         return ResponseEntity.ok(userSpaceService.list(param, getUserId(principalDetails)));
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @Operation(summary = "대시보드의 스페이스 조회",
+            description = "대시보드에 현재 사용자가 USER 로 존재하는 스페이스 리스트를 조회합니다.")
+    @GetMapping("/getDashboardSpaces")
+    public ResponseEntity<List<UserSpaceDto.DetailResDto>> getDashboardSpaces(UserSpaceDto.ListReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        return ResponseEntity.ok(userSpaceService.getDashboardSpaces(getUserId(principalDetails)));
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @Operation(summary = "그룹 관리 페이지의 스페이스 조회",
+            description = "groupId를 통해 해당 그룹에서 관리자로 존재하는 스페이스 리스트를 조회합니다.")
+    @GetMapping("/getAdminSpaces")
+    public ResponseEntity<List<UserSpaceDto.DetailResDto>> getAdminSpaces(UserSpaceDto.ListReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        return ResponseEntity.ok(userSpaceService.getAdminSpaces(param, getUserId(principalDetails)));
     }
 }

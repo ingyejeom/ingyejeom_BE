@@ -95,10 +95,8 @@
 
     function loadSpaceList(){
         $.ajax({
-            url: '/api/userSpace/list',
+            url: '/api/userSpace/getDashboardSpaces',
             method: 'GET',
-            data: { deleted: false,
-                    role: "USER" },
             success: function (data) {
                 let listArea = $("#space_list");
                 listArea.empty();
