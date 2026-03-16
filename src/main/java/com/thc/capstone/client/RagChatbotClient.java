@@ -33,7 +33,7 @@ public class RagChatbotClient {
         // Map.of를 사용하여 불변(Immutable) 맵으로 안전하게 데이터를 구성합니다.
         Map<String, Object> body = Map.of(
                 "question", param.getQuestion(),
-                "space_id", param.getSpaceId()
+                "space_id", String.valueOf(param.getSpaceId())
         );;
 
         // HTTP 헤더 설정 (JSON 타입 통신)
