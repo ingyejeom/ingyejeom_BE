@@ -35,7 +35,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     /* db */
     runtimeOnly 'com.mysql:mysql-connector-j'
-    implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.2.0'
+    // implementation group: 'org.mariadb.jdbc', name: 'mariadb-java-client', version: '2.2.0'
     /* mybatis */
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
 
