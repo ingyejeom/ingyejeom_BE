@@ -76,17 +76,22 @@ public class SpaceServiceImpl implements SpaceService {
             // 사용자 역할의 유저 스페이스 생성 및 DB 저장
                 // 입력한 유저 이메일이 있다면 해당 유저에게 할당
                 // 그렇지 않다면 요청한 유저에게 할당
-            if(param.getUserEmail() != null && !param.getUserEmail().trim().isEmpty()){
-                userRepository.findByEmail(param.getUserEmail())
-                        .ifPresent(assignee -> {
-                            userSpaceService.create(UserSpaceDto.CreateReqDto.builder()
-                                    .role(Role.USER)
-                                    .status(UserSpaceStatus.ACTIVE)
-                                    .userId(assignee.getId())
-                                    .spaceId(space.getId())
-                                    .build());
-                        });
+            Long targetUserId = reqUserId;
+
+            // 이메일이 입력된 경우에만 조회를 시도합니다.
+            if (param.getUserEmail() != null && !param.getUserEmail().trim().isEmpty()) {
+                targetUserId = userRepository.findByEmail(param.getUserEmail())
+                        .map(User::getId) // 유저가 존재하면 해당 유저의 ID를 추출합니다.
+                        .orElse(reqUserId); // 유저가 존재하지 않으면 다시 기본값(reqUserId)을 사용합니다.
             }
+
+            // 결정된 targetUserId를 바탕으로 유저-스페이스 관계를 한 번만 생성합니다.
+            userSpaceService.create(UserSpaceDto.CreateReqDto.builder()
+                    .role(Role.USER)
+                    .status(UserSpaceStatus.ACTIVE)
+                    .userId(targetUserId)
+                    .spaceId(space.getId())
+                    .build());
 
             return space.toCreateResDto();
         } catch (Exception e) {
