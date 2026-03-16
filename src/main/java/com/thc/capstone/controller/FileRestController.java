@@ -47,12 +47,13 @@ public class FileRestController {
     public ResponseEntity<Void> upload(
             @ModelAttribute FileDto.UploadReqDto param,
             @AuthenticationPrincipal PrincipalDetails principal
-    ) throws IOException { // file.getBytes()(파일 입출력 과정) 발생할 수 있는 예외를 처리하기 위해 IOException 추가했습니다.
+    ) throws IOException {
+        byte[] fileBytes = param.getFile().getBytes();// file.getBytes()(파일 입출력 과정) 발생할 수 있는 예외를 처리하기 위해 IOException 추가했습니다.
         String savedFilePath = fileService.upload(param, getUserId(principal));
         // 파일이 저장이 되고 저장된 주소를 확인하여 저장이 잘 됐는지 판단합니다.
         if(savedFilePath != null && !savedFilePath.isEmpty()) {
             // 판단 후 저장이 잘 됐다면 ChatbotDto.IngestReqDto 객체를 생성하고 챗봇 서버로 ingest 요청을 보내기 위해 챗봇서비스 계층에 요청합니다.
-            ChatbotDto.IngestReqDto ingestReqDto = ChatbotDto.IngestReqDto.builder().spaceId(param.getSpaceId()).fileBytes(param.getFile().getBytes()).fileName(param.getFile().getOriginalFilename()).build();
+            ChatbotDto.IngestReqDto ingestReqDto = ChatbotDto.IngestReqDto.builder().spaceId(param.getSpaceId()).fileBytes(fileBytes).fileName(param.getFile().getOriginalFilename()).build();
             chatbotService.ingestRequest(ingestReqDto, getUserId(principal));
         }
 
