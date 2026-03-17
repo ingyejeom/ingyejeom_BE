@@ -115,7 +115,7 @@ public class UserSpaceServiceImpl implements UserSpaceService {
             create(UserSpaceDto.CreateReqDto.builder()
                     .role(Role.USER)
                     .status(UserSpaceStatus.ACTIVE)
-                    .userId(reqUserId)
+                    .userId(targetUser.getId())
                     .spaceId(space.getId())
                     .build());
         }
