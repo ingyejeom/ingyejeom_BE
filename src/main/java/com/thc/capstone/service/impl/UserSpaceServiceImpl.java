@@ -145,6 +145,24 @@ public class UserSpaceServiceImpl implements UserSpaceService {
                 .build());
     }
 
+    @Override
+    @Transactional
+    public void deleteByUserId(Long userId) {
+        List<UserSpace> userSpaces = userSpaceRepository.findAllByUserId(userId);
+        for (UserSpace userSpace : userSpaces) {
+            delete(UserSpaceDto.UpdateReqDto.builder().id(userSpace.getId()).build());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteBySpaceId(Long spaceId) {
+        List<UserSpace> userSpaces = userSpaceRepository.findAllBySpaceId(spaceId);
+        for (UserSpace userSpace : userSpaces) {
+            delete(UserSpaceDto.UpdateReqDto.builder().id(userSpace.getId()).build());
+        }
+    }
+
     // Mapper 를 이용한 사용자 정보 조회 함수
     public UserSpaceDto.DetailResDto get(DefaultDto.DetailReqDto param) {
         return userSpaceMapper.detail(param.getId());

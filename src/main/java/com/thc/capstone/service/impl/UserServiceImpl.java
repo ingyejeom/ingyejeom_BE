@@ -4,11 +4,14 @@ import com.thc.capstone.domain.User;
 import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.PermissionuserDto;
 import com.thc.capstone.dto.UserDto;
+import com.thc.capstone.dto.UserSpaceDto;
 import com.thc.capstone.mapper.UserMapper;
 import com.thc.capstone.repository.UserRepository;
+import com.thc.capstone.repository.UserSpaceRepository;
 import com.thc.capstone.service.PermissionuserService;
 import com.thc.capstone.service.PermittedService;
 import com.thc.capstone.service.UserService;
+import com.thc.capstone.service.UserSpaceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,9 @@ public class UserServiceImpl implements UserService {
     final BCryptPasswordEncoder bCryptPasswordEncoder;
     final PermittedService permittedService;
     final PermissionuserService permissionuserService;
+
+    final UserSpaceService userSpaceService;
+    final UserSpaceRepository userSpaceRepository;
 
     String target = "user";
 
@@ -67,11 +73,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void delete(UserDto.UpdateReqDto param, Long reqUserId) {
+        Long targetUserId = (param.getId() == null || param.getId() == 0) ? reqUserId : param.getId();
+
         // update 를 이용하여 삭제
         update(UserDto.UpdateReqDto.builder()
-                .id(param.getId())
+                .id(targetUserId)
                 .deleted(true)
                 .build(), reqUserId);
+
+        // 유저 탈퇴 시 연관된 UserSpace 데이터도 일괄 삭제 처리
+        userSpaceService.deleteByUserId(targetUserId);
     }
 
     // Mapper 를 이용한 사용자 정보 조회 함수

@@ -42,6 +42,18 @@ public interface UserSpaceService {
     void delete(UserSpaceDto.UpdateReqDto param);
 
     /**
+     * 특정 유저가 탈퇴할 때 해당 유저의 모든 유저-스페이스 관계 삭제
+     * @param userId 삭제할 유저의 ID
+     */
+    void deleteByUserId(Long userId);
+
+    /**
+     * 특정 스페이스가 삭제될 때 해당 스페이스의 모든 유저-스페이스 관계 삭제
+     * @param spaceId 삭제할 스페이스의 ID
+     */
+    void deleteBySpaceId(Long spaceId);
+
+    /**
      * 유저-스페이스 상세 정보
      * @param param 조회핧 유저-스페이스 ID
      * @return 유저-스페이스의 상세 데이터 (역할, 상태, 유저 ID, 스페이스 ID, 그룹 ID, 그룹 이름, 업무 이름, 스페이스 코드)

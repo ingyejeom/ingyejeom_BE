@@ -122,6 +122,9 @@ public class SpaceServiceImpl implements SpaceService {
                 .id(param.getId())
                 .deleted(true)
                 .build(), reqUserId);
+
+        // 스페이스 삭제 시 연관된 모든 UserSpace 데이터도 일괄 삭제 처리
+        userSpaceService.deleteBySpaceId(param.getId());
     }
 
     // Mapper 를 이용한 사용자 정보 조회 함수
