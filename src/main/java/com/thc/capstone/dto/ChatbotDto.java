@@ -1,10 +1,13 @@
 package com.thc.capstone.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+
+import java.util.List;
 
 /**
  * 챗봇 기능과 관련된 DTO
@@ -23,6 +26,17 @@ public class ChatbotDto {
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class ChatResDto {
         private String answer;
+//        @JsonProperty("time_taken")
+//        private Double timeTaken;
+        private List<SourceInfoDto> sources;
+
+    }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
+    public static class SourceInfoDto {
+        private String source;
+//        private String snippet;
+        private Integer page;
     }
 
     // 파이썬 RAG 서버로 파일을 전송하여 벡터 임베딩(Ingest)을 요청할 때 사용하는 ReqDto
@@ -40,5 +54,6 @@ public class ChatbotDto {
         private String question;
         private String answer;
         private String createdAt;
+        private List<SourceInfoDto> sources;
     }
 }
