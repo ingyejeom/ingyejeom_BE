@@ -29,7 +29,7 @@ public class RagChatbotClient {
      * @param param 사용자의 질문(question)과 스페이스 ID(spaceId)
      * @return 챗봇의 응답 결과 텍스트
      */
-    public String ask(ChatbotDto.ChatReqDto param) {
+    public ChatbotDto.ChatResDto ask(ChatbotDto.ChatReqDto param) {
         // Map.of를 사용하여 불변(Immutable) 맵으로 안전하게 데이터를 구성합니다.
         Map<String, Object> body = Map.of(
                 "question", param.getQuestion(),
@@ -60,8 +60,8 @@ public class RagChatbotClient {
                 throw new IllegalStateException("Python chatbot returned empty response");
             }
 
-            // 정상의 경우 챗봇의 답변 텍스트 반환
-            return res.getBody().getAnswer();
+            // 정상의 경우 챗봇의 답변 DTO 전체를 반환
+            return res.getBody();
 
         } catch (HttpStatusCodeException e) { // 에러 발생 시 상세 내용과 함께 예외 처리
             throw new IllegalStateException("Python chatbot HTTP error: " + e.getStatusCode()

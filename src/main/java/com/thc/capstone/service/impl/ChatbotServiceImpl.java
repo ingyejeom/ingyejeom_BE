@@ -1,5 +1,7 @@
 package com.thc.capstone.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thc.capstone.domain.Chatbot;
 import com.thc.capstone.domain.UserSpace;
 import com.thc.capstone.domain.UserSpaceStatus;
@@ -29,6 +31,7 @@ public class ChatbotServiceImpl implements ChatbotService {
     private final RagChatbotClient ragChatbotClient;
     private final UserSpaceRepository userSpaceRepository;
     private final ChatbotRepository chatbotRepository;
+    private final ObjectMapper objectMapper;
 
     /**
      * 사용자의 질문을 파이썬 챗봇 서버로 전달하고, 받은 응답을 DB에 저장합니다.
@@ -67,20 +70,27 @@ public class ChatbotServiceImpl implements ChatbotService {
 
         try {
             // 파이썬 서버로 질의 요청 전송
-            String answer = ragChatbotClient.ask(param);
+            ChatbotDto.ChatResDto res = ragChatbotClient.ask(param);
+
+            String sourcesJson = "[]";
+            if (res.getSources() != null) {
+                sourcesJson = objectMapper.writeValueAsString(res.getSources());
+            }
 
             // 질의응답 기록(Chat History)을 데이터베이스에 저장
             Long userSpaceId = userSpace.getId();
-            Chatbot saved = chatbotRepository.save(Chatbot.of(query, answer, userSpaceId));
+            Chatbot saved = chatbotRepository.save(Chatbot.of(query, res.getAnswer(), userSpaceId, sourcesJson));
             log.info("[ChatbotResponse] Answer saved to DB. chatbotId: {}, userSpaceId: {}", saved.getId(), userSpaceId);
 
             // 클라이언트에게 반환할 응답 객체 생성 후 반환
-            return ChatbotDto.ChatResDto.builder()
-                    .answer(answer)
-                    .build();
+            return res;
         } catch (Exception e) {
             log.error("[ChatbotRequest] Python API Communication Error: {}", e.getMessage(), e);
-            throw e;
+            try {
+                throw e;
+            } catch (JsonProcessingException ex) {
+                throw new RuntimeException(ex);
+            }
         }
 
     }
@@ -127,7 +137,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         log.info("[ChatHistory] Found {} records for userSpaceId: {}", chatHistory.size(), userSpace.getId());
 
         // 엔티티(Entity) 리스트를 클라이언트 반환용 DTO 리스트로 변환(Map)하여 반환
-        return chatHistory.stream().map(chat -> chat.toHistoryResDto()).collect(Collectors.toList());
+        return chatHistory.stream().map(chat -> chat.toHistoryResDto(objectMapper)).collect(Collectors.toList());
     }
 
 
