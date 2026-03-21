@@ -82,7 +82,15 @@ public class UserSpaceRestController {
             description = "status, role, groupId 등을 통한 필터링으로 필요한 스페이스 리스트를 조회합니다.<br>본 서비스에서는 보통 프로필에서 스페이스 리스트를 볼 때 사용합니다.")
     @GetMapping("/list")
     public ResponseEntity<List<UserSpaceDto.DetailResDto>> list(UserSpaceDto.ListReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
-        return ResponseEntity.ok(userSpaceService.list(param, getUserId(principalDetails)));
+        return ResponseEntity.ok(userSpaceService.list(param));
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @Operation(summary = "프로필의 스페이스 조회",
+            description = "프로필에 현재 사용자가 속한 스페이스 모두 조회 (관리자, 담당자)")
+    @GetMapping("/getProfileSpaces")
+    public ResponseEntity<List<UserSpaceDto.DetailResDto>> getProfileSpaces(UserSpaceDto.ListReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails){
+        return ResponseEntity.ok(userSpaceService.getProfileSpaces(param, getUserId(principalDetails)));
     }
 
     @PreAuthorize("hasRole('USER')")

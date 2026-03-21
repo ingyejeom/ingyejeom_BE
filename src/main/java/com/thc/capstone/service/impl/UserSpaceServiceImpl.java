@@ -185,69 +185,49 @@ public class UserSpaceServiceImpl implements UserSpaceService {
         return newList;
     }
 
-    // 프로필에서 본인이 속한 그룹 및 스페이스를 모두 띄우기
+    // 기본 유저-스페이스 목록 조회 (Mapper 직접 호출용)
     @Override
-    public List<UserSpaceDto.DetailResDto> list(UserSpaceDto.ListReqDto param, Long reqUserId) {
-        // Mapper 쿼리에 전달할 파라미너 맵 구성
-        Map<String, Object> map = new HashMap<>();
-
-        // 필수 필터 조건 설정
-        map.put("reqUserId", reqUserId);
-        map.put("deleted", false);
-
-        // 요청한 상태 적용 (기본 : ACTIVE)
-        map.put("status", param.getStatus() != null ? param.getStatus() : "ACTIVE");
-
+    public List<UserSpaceDto.DetailResDto> list(UserSpaceDto.ListReqDto param) {
         // N + 1 문제 방지를 위해 ID 목록 조회
-        List<UserSpaceDto.DetailResDto> idList = userSpaceMapper.list(map);
+        List<UserSpaceDto.DetailResDto> idList = userSpaceMapper.list(param);
 
         return addlist(idList);
+    }
+
+    // 프로필에서 본인이 속한 그룹 및 스페이스를 모두 띄우기
+    @Override
+    public List<UserSpaceDto.DetailResDto> getProfileSpaces(UserSpaceDto.ListReqDto param, Long reqUserId) {
+        param.setReqUserId(reqUserId);
+        param.setDeleted(false);
+        if(param.getStatus() == null) {
+            param.setStatus(UserSpaceStatus.ACTIVE);
+        }
+
+        return list(param);
     }
 
     // 대시보드에 현재 사용자가 속한 스페이스
     @Override
     public List<UserSpaceDto.DetailResDto> getDashboardSpaces(Long reqUserId) {
-        // Mapper 쿼리에 전달할 파라미너 맵 구성
-        Map<String, Object> map = new HashMap<>();
+        UserSpaceDto.ListReqDto param = UserSpaceDto.ListReqDto.builder()
+                .reqUserId(reqUserId)
+                .deleted(false)
+                .status(UserSpaceStatus.ACTIVE)
+                .role(Role.USER)
+                .build();
 
-        // 필수 필터 조건 설정
-        map.put("reqUserId", reqUserId);
-        map.put("deleted", false);
-
-        map.put("status", "ACTIVE");
-
-        // USER 로 존재하는 스페이스만 필터링
-        map.put("role", "USER");
-
-        // N + 1 문제 방지를 위해 ID 목록 조회
-        List<UserSpaceDto.DetailResDto> idList = userSpaceMapper.list(map);
-
-        return addlist(idList);
+        return list(param);
     }
 
     // 그룹관리를 위해 해당 그룹에서 관리자로 할당되어 있는 스페이스
     @Override
     public List<UserSpaceDto.DetailResDto> getAdminSpaces(UserSpaceDto.ListReqDto param, Long reqUserId) {
-        // Mapper 쿼리에 전달할 파라미너 맵 구성
-        Map<String, Object> map = new HashMap<>();
-
-        // 필수 필터 조건 설정
-        map.put("reqUserId", reqUserId);
-        map.put("deleted", false);
-
-        map.put("status", "ACTIVE");
-
-        map.put("role", "ADMIN");
-
-        if(param.getGroupId() != null){
-            map.put("groupId", param.getGroupId());
-        } else {
-            map.put("groupId", null);
-        }
-
-        // N + 1 문제 방지를 위해 ID 목록 조회
-        List<UserSpaceDto.DetailResDto> idList = userSpaceMapper.list(map);
-
-        return addlist(idList);
+        // 프론트에서 넘어온 param 객체(groupId 등 포함)에 서버 필수 조건만 세팅
+        param.setReqUserId(reqUserId);
+        param.setDeleted(false);
+        param.setStatus(UserSpaceStatus.ACTIVE);
+        param.setRole(Role.ADMIN);
+        
+        return list(param);
     }
 }

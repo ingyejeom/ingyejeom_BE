@@ -7,7 +7,7 @@ import java.util.Map;
 
 public interface UserSpaceMapper {
     UserSpaceDto.DetailResDto detail(Long id);
-    List<UserSpaceDto.DetailResDto> list(Map<String, Object> param);
+    List<UserSpaceDto.DetailResDto> list(UserSpaceDto.ListReqDto param);
 
     // 그룹 수정 권한 확인
     boolean isGroupAdmin(Map<String, Object> param);

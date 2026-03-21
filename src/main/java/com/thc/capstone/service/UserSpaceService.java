@@ -61,15 +61,21 @@ public interface UserSpaceService {
     UserSpaceDto.DetailResDto detail(DefaultDto.DetailReqDto param);
 
     /**
-     * 유저-스페이스 조회
-     * @param param 필터 검색 조건 (상태, 역할, 속해있는 그룹)
+     * 기본 유저-스페이스 목록 조회
+     * @param param 조회 필터 DTO (요청한 유저 ID, 상태, 역할, 속해있는 그룹)
+     */
+    List<UserSpaceDto.DetailResDto> list(UserSpaceDto.ListReqDto param);
+
+    /**
+     * 프로필에서 본인이 속한 그룹 및 스페이스를 모두 띄우기
+     * @param param 필터 검색 조건 (요청한 유저 ID)
      * @param reqUserId 요청한 사용자 ID
      * @return 유저-스페이스의 상세 데이터 리스트 (역할, 상태, 유저 ID, 스페이스 ID, 그룹 ID, 그룹 이름, 업무 이름, 스페이스 코드)
      */
-    List<UserSpaceDto.DetailResDto> list(UserSpaceDto.ListReqDto param, Long reqUserId);
+    List<UserSpaceDto.DetailResDto> getProfileSpaces(UserSpaceDto.ListReqDto param, Long reqUserId);
 
     /**
-     * 대시보드에 띄울 스페이스 조회
+     * 대시보드에 현재 사용자가 속한 스페이스 조회
      * @param reqUserId 요청한 사용자 ID
      * @return 현재 접속 중인 사용자가 USER 로 존재하는 스페이스 리스트
      */

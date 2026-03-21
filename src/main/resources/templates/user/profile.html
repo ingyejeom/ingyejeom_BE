@@ -130,7 +130,7 @@
     // 스페이스 목록 불러와서 ADMIN(그룹핑), USER(나열) 분리
     function loadMySpaces(){
         $.ajax({
-            url: '/api/userSpace/list',
+            url: '/api/userSpace/getProfileSpaces',
             method: 'GET',
             data: { deleted: false },
             success: function(data){
