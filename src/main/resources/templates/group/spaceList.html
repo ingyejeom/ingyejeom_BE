@@ -120,6 +120,7 @@
                     let workName = item.workName || "업무없음";
                     let spaceCode = item.spaceCode || "코드없음";
                     let createdAt = item.createdAt ? item.createdAt.split('T')[0] : "-";
+                    let userName = item.userName || "미배정";
 
                     let html = `
                         <div class="space-item">
@@ -127,6 +128,7 @@
                                 <div class="txt-title">${groupName} ${workName}</div>
                                 <div class="txt-sub">${spaceCode}</div>
                                 <div class="txt-sub">생성일: ${createdAt}</div>
+                                <div class="txt-sub">담당자: ${userName}</div>
                             </div>
                             <div class="btn-area">
                                 <button class="btn-enter" onclick="location.href='/space/detail/${item.spaceId}'">입장</button>

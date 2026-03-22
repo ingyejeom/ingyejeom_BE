@@ -130,7 +130,7 @@
     // 스페이스 목록 불러와서 ADMIN(그룹핑), USER(나열) 분리
     function loadMySpaces(){
         $.ajax({
-            url: '/api/userSpace/list',
+            url: '/api/userSpace/getProfileSpaces',
             method: 'GET',
             data: { deleted: false },
             success: function(data){
@@ -154,6 +154,12 @@
                     let workName = item.workName ? item.workName : "업무명없음";
                     let spaceCode = item.spaceCode ? item.spaceCode : "코드없음";
                     let groupId = item.groupId;
+
+                    // [추가] 권한에 따라 화면에 보여줄 대상(관리자 or 담당자) 결정
+                    let displayRoleInfo = "";
+                    if (role === 'USER') {
+                        displayRoleInfo = `관리자: ${item.adminName ? item.adminName : '미배정'}`;
+                    }
 
                     if(role === 'ADMIN'){
                         // 이미 등록된 그룹명이 아니면 그리기
@@ -185,6 +191,9 @@
                                     </span>
                                     <span style="display: block; font-size: 14px; color: #888; margin-top: 4px;">
                                         [ ${spaceCode} ]
+                                    </span>
+                                    <span style="display: block; font-size: 14px; color: #4e73df; margin-top: 4px; font-weight: bold;">
+                                        ${displayRoleInfo}
                                     </span>
                                 </div>
                                 <button class="btn-yellow" onclick="requestHandover(${item.spaceId})">인계하기</button>

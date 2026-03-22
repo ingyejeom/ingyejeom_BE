@@ -3,6 +3,7 @@ package com.thc.capstone.dto;
 import com.thc.capstone.domain.Role;
 import com.thc.capstone.domain.UserSpace;
 import com.thc.capstone.domain.UserSpaceStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -84,6 +85,10 @@ public class UserSpaceDto {
         Long groupId;
         String groupName;
 
+        String userName;
+        // 스페이스의 현재 관리자 이름
+        String adminName;
+
         String workName;
         String spaceCode;
     }
@@ -96,9 +101,14 @@ public class UserSpaceDto {
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class ListReqDto extends DefaultDto.ListReqDto {
         /**
-         * 검색 조건 : 상태, 역할, 속해있는 그룹
+         * 검색 조건 : 요청한 유저 ID, 상태, 역할, 속해있는 그룹
          */
+        @Schema(hidden = true)
+        private Long reqUserId;
+
         UserSpaceStatus status;
+
+        @Schema(hidden = true)
         Role role;
 
         Long groupId;
