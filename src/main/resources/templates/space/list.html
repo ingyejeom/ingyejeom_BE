@@ -28,6 +28,8 @@
         /* 카드 스타일 */
         .space-card { background-color: #f8f9fa; border: 1px solid #ced4da; padding: 25px; height: 180px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; }
         .card-top { font-size: 18px; font-weight: 600; color: #333; }
+        /* [추가] 카드 중간 정보 (관리자 이름 등) */
+        .card-info { font-size: 14px; color: #666; margin-top: 10px; flex-grow: 1; }
         .card-bottom { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
 
         /* 버튼 스타일 */
@@ -109,10 +111,13 @@
                 $.each(data, function(index, us){
                     let groupName = us.groupName ? us.groupName : "그룹없음";
                     let workName = us.workName ? us.workName : "이름없음";
+                    // [추가] 관리자 이름 렌더링 (값이 없으면 '미배정' 표시)
+                    let adminName = us.adminName ? us.adminName : "미배정";
 
                     let cardHtml = `
                         <div class="space-card">
                             <div class="card-top">${groupName} ${workName}</div>
+                            <div class="card-info">관리자 : ${adminName}</div>
                             <div class="card-bottom">
                                 <button class="btn-enter" onclick="goFileDetail(${us.spaceId})">파일</button>
                                 <button class="btn-enter" onclick="goSpaceDetail(${us.spaceId})">입장</button>

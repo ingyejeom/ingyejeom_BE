@@ -85,6 +85,10 @@ public class UserSpaceDto {
         Long groupId;
         String groupName;
 
+        String userName;
+        // 스페이스의 현재 관리자 이름
+        String adminName;
+
         String workName;
         String spaceCode;
     }
