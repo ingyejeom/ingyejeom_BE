@@ -22,6 +22,12 @@ public interface HandoverService {
     DefaultDto.CreateResDto create(HandoverDto.CreateReqDto param, Long reqUserId);
 
     /**
+     * spaceId로 새 인수인계 문서를 생성한다.
+     * 내부적으로 userId + spaceId를 이용해 userSpaceId를 찾아 생성한다.
+     */
+    DefaultDto.CreateResDto createBySpaceId(HandoverDto.CreateBySpaceIdReqDto param, Long reqUserId);
+
+    /**
      * 인수인계 문서의 제목, 역할, 내용을 수정한다.
      * null이 아닌 필드만 업데이트된다.
      */

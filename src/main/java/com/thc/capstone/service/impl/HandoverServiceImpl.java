@@ -2,6 +2,7 @@ package com.thc.capstone.service.impl;
 
 import com.thc.capstone.domain.Handover;
 import com.thc.capstone.domain.UserSpace;
+import com.thc.capstone.domain.UserSpaceStatus;
 import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.HandoverDto;
 import com.thc.capstone.mapper.HandoverMapper;
@@ -53,6 +54,35 @@ public class HandoverServiceImpl implements HandoverService {
 
         } catch (Exception e) {
             log.error("인수인계 문서 생성 실패: {}", e.getMessage());
+            throw new RuntimeException("인수인계 문서 생성 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    /**
+     * spaceId로 인수인계 문서를 생성한다.
+     * 프론트엔드에서 userSpaceId 대신 spaceId만 전달하는 경우 사용한다.
+     */
+    @Override
+    @Transactional
+    public DefaultDto.CreateResDto createBySpaceId(HandoverDto.CreateBySpaceIdReqDto param, Long reqUserId) {
+        validateLogin(reqUserId);
+
+        try {
+            // userId + spaceId로 UserSpace를 찾는다 (status 무관)
+            UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceId(reqUserId, param.getSpaceId())
+                    .orElseThrow(() -> new RuntimeException("해당 스페이스에 대한 접근 권한이 없습니다."));
+
+            String title = resolveTitle(param.getTitle(), param.getRole());
+            String text = resolveText(param.getText(), title, param.getRole());
+
+            Handover handover = Handover.of(title, param.getRole(), text, userSpace.getId());
+            handoverRepository.save(handover);
+
+            log.info("[createBySpaceId] 인수인계 문서 생성 완료 - ID: {}, 제목: {}, spaceId: {}", handover.getId(), title, param.getSpaceId());
+            return handover.toCreateResDto();
+
+        } catch (Exception e) {
+            log.error("[createBySpaceId] 인수인계 문서 생성 실패: {}", e.getMessage());
             throw new RuntimeException("인수인계 문서 생성 중 오류가 발생했습니다: " + e.getMessage());
         }
     }

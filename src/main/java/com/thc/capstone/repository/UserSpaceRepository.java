@@ -15,6 +15,9 @@ public interface UserSpaceRepository extends JpaRepository<UserSpace, Long> {
 
     Optional<UserSpace> findFirstByUserIdAndSpaceIdAndStatus(Long userId, Long spaceId, UserSpaceStatus status);
 
+    // userId + spaceId로 조회 (status 무관)
+    Optional<UserSpace> findFirstByUserIdAndSpaceId(Long userId, Long spaceId);
+
     List<UserSpace> findAllByUserId(Long userId);
 
     List<UserSpace> findAllBySpaceId(Long spaceId);

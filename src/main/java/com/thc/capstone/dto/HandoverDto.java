@@ -34,6 +34,22 @@ public class HandoverDto {
     }
 
     /**
+     * spaceId로 인수인계 문서 생성 요청 DTO
+     * 프론트엔드에서 userSpaceId 대신 spaceId를 전달할 때 사용한다.
+     */
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @SuperBuilder
+    public static class CreateBySpaceIdReqDto {
+        private String title;
+        private String role;
+        private String text;
+        private Long spaceId;
+    }
+
+    /**
      * 인수인계 문서 생성 응답 DTO
      */
     @Getter
