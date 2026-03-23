@@ -51,6 +51,19 @@ public class HandoverRestController {
     }
 
     /**
+     * spaceId로 새 인수인계 문서를 생성한다.
+     * 프론트엔드에서 userSpaceId 대신 spaceId를 전달할 때 사용한다.
+     */
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/bySpace")
+    public ResponseEntity<DefaultDto.CreateResDto> createBySpaceId(
+            @RequestBody HandoverDto.CreateBySpaceIdReqDto param,
+            @AuthenticationPrincipal PrincipalDetails principalDetails) {
+
+        return ResponseEntity.ok(handoverService.createBySpaceId(param, getUserId(principalDetails)));
+    }
+
+    /**
      * 기존 인수인계 문서의 제목, 역할, 내용을 수정한다.
      * null이 아닌 필드만 업데이트된다.
      */
