@@ -51,15 +51,15 @@ public class ChatbotRestController {
     /**
      * 특정 스페이스의 과거 챗봇 대화 기록을 조회합니다.
      * Restful API 규칙을 따라 spaceId를 PathVariable로 받습니다.
-     * @param spaceId 대화 기록을 조회할 대상 스페이스의 ID
+     * @param param 챗봇의 대화 내역을 불러오기 위한 요청 DTO
      * @param principalDetails 사용자의 인증 정보
      * @return HTTP 상태코드와 응답 결과 List
      */
     @Operation(summary = "챗봇 대화 기록 조회", description = "특정 스페이스 내에서 이루어진 과거의 대화 내역을 시간순으로 조회합니다.")
-    @GetMapping("/history/{spaceId}")
-    public ResponseEntity<List<ChatbotDto.HistoryResDto>> getChatHistory(@PathVariable("spaceId") Long spaceId, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+    @GetMapping("/history")
+    public ResponseEntity<List<ChatbotDto.HistoryResDto>> getChatHistory(@ModelAttribute ChatbotDto.HistoryReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         // DB에 저장된 해당 스페이스의 챗봇 히스토리를 리스트 형태로 조회 후 ResponseEntity로 감싸서 반환합니다.
-        return ResponseEntity.ok(chatbotService.getHistory(spaceId, getUserId(principalDetails)));
+        return ResponseEntity.ok(chatbotService.getHistory(param, getUserId(principalDetails)));
 
     }
 }

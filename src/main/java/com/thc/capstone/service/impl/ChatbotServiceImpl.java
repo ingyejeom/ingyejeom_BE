@@ -12,10 +12,13 @@ import com.thc.capstone.service.ChatbotService;
 import com.thc.capstone.client.RagChatbotClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -117,23 +120,29 @@ public class ChatbotServiceImpl implements ChatbotService {
 
     /**
      * 특정 스페이스의 과거 챗봇 대화 기록을 조회합니다.
-     * @param spaceId 요청이 온 스페이스의 식별 ID
+     * @param param 챗봇의 대화 내역을 불러오기 위한 요청 DTO
      * @param reqUserId 요청을 보낸 사용자의 식별 ID
      * @return 대화 기록 리스트
      */
     @Override
-    public List<ChatbotDto.HistoryResDto> getHistory(Long spaceId, Long reqUserId) {
-        log.info("[ChatHistory] Fetching history for userId: {}, spaceId: {}", reqUserId, spaceId);
+    public List<ChatbotDto.HistoryResDto> getHistory(ChatbotDto.HistoryReqDto param, Long reqUserId) {
+        log.info("[ChatHistory] Fetching history for userId: {}, spaceId: {}", reqUserId, param.getSpaceId());
 
         // 해당 스페이스에 대한 사용자 접근 권한 검증
-        UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(reqUserId, spaceId, UserSpaceStatus.ACTIVE)
+        UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(reqUserId, param.getSpaceId(), UserSpaceStatus.ACTIVE)
                 .orElseThrow(() -> {
-                    log.error("[ChatHistory] Active userSpace not found! userId: {}, spaceId: {}", reqUserId, spaceId);
+                    log.error("[ChatHistory] Active userSpace not found! userId: {}, spaceId: {}", reqUserId, param.getSpaceId());
                     return new IllegalStateException("Active userSpace not found for userId=" + reqUserId);
                 });
 
-        // DB에서 생성일자(CreatedAt) 오름차순으로 대화 기록을 가져옴
-        List<Chatbot> chatHistory = chatbotRepository.findByUserSpaceIdOrderByCreatedAtAsc(userSpace.getId());
+        Pageable pageable = PageRequest.of(0, param.getSize());
+        List<Chatbot> chatHistory;
+        if (param.getCursor() == null) {
+            chatHistory = chatbotRepository.findByUserSpaceIdOrderByIdDesc(userSpace.getId(), pageable);
+        } else {
+            chatHistory = chatbotRepository.findByUserSpaceIdAndIdLessThanOrderByIdDesc(userSpace.getId(), param.getCursor(), pageable);
+        }
+        Collections.reverse(chatHistory);
         log.info("[ChatHistory] Found {} records for userSpaceId: {}", chatHistory.size(), userSpace.getId());
 
         // 엔티티(Entity) 리스트를 클라이언트 반환용 DTO 리스트로 변환(Map)하여 반환
