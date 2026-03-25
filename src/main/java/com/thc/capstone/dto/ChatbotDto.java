@@ -56,4 +56,15 @@ public class ChatbotDto {
         private String createdAt;
         private List<SourceInfoDto> sources;
     }
+
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
+    public static class HistoryReqDto {
+        private Long spaceId;
+        private Long cursor;
+        private Integer size;
+
+        public Integer getSize() {
+            return this.size == null ? 4 : this.size;
+        }
+    }
 }

@@ -356,123 +356,28 @@
 
         .back-link { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #666; font-size: 14px; }
 
-        /* Chat UI (space.html 톤 유지: 심플 + 카드 내부) */
-        .chat-area {
-            margin-top: 30px;
-            text-align: left;
-            border: 1px solid #eee;
-            border-radius: 10px;
-            background: #fbfbfd;
-            overflow: hidden;
-        }
-
-        .chat-header {
-            padding: 14px 16px;
-            background: #ffffff;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .chat-title {
-            font-weight: 700;
-            color: #333;
-            font-size: 15px;
-        }
-
-        .chat-hint {
-            font-size: 12px;
-            color: #888;
-        }
-
-        .chat-log {
-            height: 320px;
-            overflow-y: auto;
-            padding: 16px;
-        }
-
+        /* Chat UI */
+        .chat-area { margin-top: 30px; text-align: left; border: 1px solid #eee; border-radius: 10px; background: #fbfbfd; overflow: hidden; }
+        .chat-header { padding: 14px 16px; background: #ffffff; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
+        .chat-title { font-weight: 700; color: #333; font-size: 15px; }
+        .chat-hint { font-size: 12px; color: #888; }
+        .chat-log { height: 320px; overflow-y: auto; padding: 16px; }
         .msg-row { display: flex; margin-bottom: 10px; }
         .msg-row.user { justify-content: flex-end; }
         .msg-row.bot { justify-content: flex-start; }
+        .msg { max-width: 78%; padding: 10px 12px; border-radius: 10px; line-height: 1.45; font-size: 14px; white-space: pre-wrap; word-break: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+        .msg.user { background: #ffffff; border: 1px solid #e8e8e8; color: #333; }
+        .msg.bot { background: #f1f3f7; border: 1px solid #e6e8ef; color: #333; }
 
-        .msg {
-            max-width: 78%;
-            padding: 10px 12px;
-            border-radius: 10px;
-            line-height: 1.45;
-            font-size: 14px;
-            white-space: pre-wrap;
-            word-break: break-word;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-        }
+        /* 출처 뱃지 스타일 */
+        .ref-badge { margin-top: 8px; padding: 6px 10px; background-color: #ffffff; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; color: #4b5563; display: inline-block; word-break: keep-all; font-weight: 500; }
 
-        .msg.user {
-            background: #ffffff;
-            border: 1px solid #e8e8e8;
-            color: #333;
-        }
-
-        .msg.bot {
-            background: #f1f3f7;
-            border: 1px solid #e6e8ef;
-            color: #333;
-        }
-
-        /* 🌟 추가된 출처 뱃지 스타일 */
-        .ref-badge {
-            margin-top: 8px;
-            padding: 6px 10px;
-            background-color: #ffffff;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 12px;
-            color: #4b5563;
-            display: inline-block;
-            word-break: keep-all;
-            font-weight: 500;
-        }
-
-        .chat-input {
-            display: flex;
-            gap: 10px;
-            padding: 14px 16px;
-            border-top: 1px solid #eee;
-            background: #ffffff;
-        }
-
-        .chat-input textarea {
-            flex: 1;
-            resize: none;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px 12px;
-            font-size: 14px;
-            outline: none;
-            height: 44px;
-        }
-
-        .chat-input textarea:focus {
-            border-color: #b7c0d6;
-            box-shadow: 0 0 0 2px rgba(78,115,223,0.08);
-        }
-
-        .btn-send {
-            padding: 10px 14px;
-            border-radius: 8px;
-            border: 1px solid #cfd6ea;
-            background: #ffffff;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 14px;
-            min-width: 88px;
-        }
-
+        .chat-input { display: flex; gap: 10px; padding: 14px 16px; border-top: 1px solid #eee; background: #ffffff; }
+        .chat-input textarea { flex: 1; resize: none; border: 1px solid #ddd; border-radius: 8px; padding: 10px 12px; font-size: 14px; outline: none; height: 44px; }
+        .chat-input textarea:focus { border-color: #b7c0d6; box-shadow: 0 0 0 2px rgba(78,115,223,0.08); }
+        .btn-send { padding: 10px 14px; border-radius: 8px; border: 1px solid #cfd6ea; background: #ffffff; cursor: pointer; transition: all 0.2s; font-size: 14px; min-width: 88px; }
         .btn-send:hover { background: #f1f1f1; }
-        .btn-send:disabled {
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
+        .btn-send:disabled { cursor: not-allowed; opacity: 0.6; }
     </style>
 </head>
 
@@ -510,12 +415,15 @@
 </div>
 
 <script>
-    // URL에서 spaceId 추출 (예: /space/detail/15 -> 15)
     const pathParts = location.pathname.split('/');
     const spaceId = pathParts[pathParts.length - 1];
 
+    // 🌟 스크롤 페이징을 위한 상태 변수 추가
+    let currentCursor = null;
+    let isFetchingHistory = false;
+    let hasMoreHistory = true;
+
     $(document).ready(function () {
-        // 토큰 설정
         let accessToken = localStorage.getItem("accessToken");
         if (accessToken) {
             $.ajaxSetup({
@@ -527,13 +435,21 @@
         }
 
         loadSpaceDetail();
-        loadChatHistory();
+        loadChatHistory(); // 최초 로딩 호출
 
         // Enter 전송 / Shift+Enter 줄바꿈
         $("#questionInput").on("keydown", function (e) {
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 sendQuestion();
+            }
+        });
+
+        // 🌟 스크롤 이벤트 감지 (위로 끝까지 올렸을 때 추가 로딩)
+        $("#chatLog").on("scroll", function() {
+            // scrollTop이 0(맨 위)에 도달했고, 불러올 데이터가 더 있으며, 현재 로딩 중이 아닐 때
+            if ($(this).scrollTop() === 0 && hasMoreHistory && !isFetchingHistory) {
+                loadChatHistory();
             }
         });
     });
@@ -554,43 +470,38 @@
         });
     }
 
-    // 🌟 수정된 appendMessage: 출처(sources) 데이터를 받아 렌더링합니다.
-    function appendMessage(role, text, sources) {
+    // 🌟 (리팩토링) 메시지 HTML 노드를 생성해서 반환하는 함수 (배열 통째로 넣기 위함)
+    function createMessageNode(role, text, sources) {
         const rowClass = role === "user" ? "user" : "bot";
         const msgClass = role === "user" ? "user" : "bot";
 
         const $row = $(`<div class="msg-row ${rowClass}"></div>`);
         const $msg = $(`<div class="msg ${msgClass}"></div>`);
 
-        // 텍스트는 별도 div에 담아 안전하게 삽입
         const $textBox = $("<div></div>").text(text);
         $msg.append($textBox);
 
-        // 🌟 챗봇이고 출처가 있으면 하단에 뱃지 추가
         if (role === "bot" && sources && sources.length > 0) {
-            // 뱃지들을 가로로 나란히 담을 컨테이너 생성
             const $refContainer = $('<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;"></div>');
-
-            // 전달받은 모든 출처를 돌면서 뱃지를 만듭니다.
             sources.forEach(sourceInfo => {
                 let refText = `📄 ${sourceInfo.source}`;
-
-                // 페이지 번호가 존재할 경우에만 텍스트 추가
                 if (sourceInfo.page !== null && sourceInfo.page !== undefined) {
                     refText += ` (${sourceInfo.page}쪽)`;
                 }
-
                 const $refBadge = $(`<div class="ref-badge"></div>`).text(refText);
                 $refContainer.append($refBadge);
             });
-
-            $msg.append($refContainer); // 말풍선 하단에 컨테이너 삽입
+            $msg.append($refContainer);
         }
 
         $row.append($msg);
-        $("#chatLog").append($row);
+        return $row;
+    }
 
-        // 스크롤 맨 아래
+    // 기존의 새 메시지 추가 함수 (채팅 칠 때 사용)
+    function appendMessage(role, text, sources) {
+        const $row = createMessageNode(role, text, sources);
+        $("#chatLog").append($row);
         const el = document.getElementById("chatLog");
         el.scrollTop = el.scrollHeight;
     }
@@ -600,7 +511,6 @@
         $("#questionInput").prop("disabled", isSending);
     }
 
-    // ✅ 질문 보내기
     function sendQuestion() {
         const q = $("#questionInput").val().trim();
         if (!q) return;
@@ -618,7 +528,6 @@
                 spaceId: spaceId
             }),
             success: function (data) {
-                // 🌟 data.sources도 함께 넘겨줍니다.
                 appendMessage("bot", data.answer ?? "(답변이 비어있습니다)", data.sources);
             },
             error: function (xhr) {
@@ -631,7 +540,60 @@
         });
     }
 
-    // 1. 업무명 수정 (기존 동일)
+    // 🌟 수정된 과거 대화 내역 불러오기 함수 (Scroll Pagination 적용)
+    function loadChatHistory() {
+        if (isFetchingHistory || !hasMoreHistory) return;
+        isFetchingHistory = true;
+
+        // @ModelAttribute가 맵핑할 수 있도록 데이터를 세팅합니다.
+        const reqData = { spaceId: spaceId };
+        if (currentCursor !== null) {
+            reqData.cursor = currentCursor; // 초기 로딩이 아니면 cursor 포함
+        }
+
+        $.ajax({
+            url: `/api/chatbot/history`, // URL 경로에서 /{spaceId} 제거
+            method: 'GET',
+            data: reqData, // ?spaceId=1&cursor=15 형태로 자동 변환되어 날아감
+            success: function (data) {
+                if (data && data.length > 0) {
+                    currentCursor = data[0].id;
+                    const chatLogEl = document.getElementById("chatLog");
+                    const previousScrollHeight = chatLogEl.scrollHeight;
+
+                    let $batch = [];
+                    data.forEach(function (chat) {
+                        $batch.push(createMessageNode("user", chat.question));
+                        $batch.push(createMessageNode("bot", chat.answer, chat.sources));
+                    });
+
+                    if (!reqData.cursor) {
+                        $("#chatLog").empty();
+                        $("#chatLog").append($batch);
+                        chatLogEl.scrollTop = chatLogEl.scrollHeight;
+                    } else {
+                        $("#chatLog").prepend($batch);
+                        chatLogEl.scrollTop = chatLogEl.scrollHeight - previousScrollHeight;
+                    }
+
+                    // 🌟 가져온 개수가 4개 미만이면 더 이상 과거 데이터가 없는 것으로 간주
+                    if (data.length < 4) { // 👈 20을 4로 변경!
+                        hasMoreHistory = false;
+                    }
+                } else {
+                    hasMoreHistory = false;
+                }
+            },
+            error: function (xhr) {
+                console.error("채팅 내역을 불러오는데 실패했습니다.", xhr);
+            },
+            complete: function () {
+                isFetchingHistory = false;
+            }
+        });
+    }
+
+    // 업무명 수정 (유지)
     function updateWorkName() {
         let currentName = $("#text_work_name").text();
         let newName = prompt("새로운 업무명을 입력하세요:", currentName);
@@ -652,12 +614,12 @@
                 loadSpaceDetail();
             },
             error: function () {
-                alert("수정에 실패했습니다. (권한이 없거나 오류 발생)");
+                alert("수정에 실패했습니다.");
             }
         });
     }
 
-    // 2. 스페이스 삭제 (기존 동일)
+    // 스페이스 삭제 (유지)
     function deleteSpace() {
         if (!confirm("정말 이 스페이스를 삭제하시겠습니까?\n삭제 후에는 복구할 수 없습니다.")) return;
 
@@ -671,27 +633,7 @@
                 location.href = "/space/list";
             },
             error: function () {
-                alert("삭제에 실패했습니다. (권한이 없거나 오류 발생)");
-            }
-        });
-    }
-
-    // 이전 채팅 기록 가져오기
-    function loadChatHistory() {
-        $.ajax({
-            url: `/api/chatbot/history/${spaceId}`,
-            method: 'GET',
-            success: function (data) {
-                if (data && data.length > 0) {
-                    data.forEach(function (chat) {
-                        appendMessage("user", chat.question);
-                        // 🌟 과거 내역에서도 출처를 넘겨줍니다.
-                        appendMessage("bot", chat.answer, chat.sources);
-                    });
-                }
-            },
-            error: function (xhr) {
-                console.error("채팅 내역을 불러오는데 실패했습니다.", xhr);
+                alert("삭제에 실패했습니다.");
             }
         });
     }

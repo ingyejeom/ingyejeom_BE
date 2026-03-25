@@ -9,5 +9,5 @@ import java.util.List;
 public interface ChatbotService {
     ChatbotDto.ChatResDto askChatbot(ChatbotDto.ChatReqDto param, Long reqUserId);
     void ingestRequest(ChatbotDto.IngestReqDto param, Long reqUserId);
-    List<ChatbotDto.HistoryResDto> getHistory(Long spaceId, Long reqUserId);
+    List<ChatbotDto.HistoryResDto> getHistory(ChatbotDto.HistoryReqDto param, Long reqUserId);
 }
