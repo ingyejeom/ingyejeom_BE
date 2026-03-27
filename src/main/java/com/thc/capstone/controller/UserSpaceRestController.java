@@ -95,10 +95,10 @@ public class UserSpaceRestController {
 
     @PreAuthorize("hasRole('USER')")
     @Operation(summary = "대시보드의 스페이스 조회",
-            description = "대시보드에 현재 사용자가 USER 로 존재하는 스페이스 리스트를 조회합니다.")
+            description = "대시보드에 현재 사용자가 USER 로 존재하는 스페이스 리스트를 페이지 리스트로 조회합니다.")
     @GetMapping("/getDashboardSpaces")
-    public ResponseEntity<List<UserSpaceDto.DetailResDto>> getDashboardSpaces(UserSpaceDto.ListReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
-        return ResponseEntity.ok(userSpaceService.getDashboardSpaces(getUserId(principalDetails)));
+    public ResponseEntity<DefaultDto.PagedListResDto<UserSpaceDto.DetailResDto>> getDashboardSpaces(UserSpaceDto.PagedListReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        return ResponseEntity.ok(userSpaceService.getDashboardSpaces(param, getUserId(principalDetails)));
     }
 
     @PreAuthorize("hasRole('USER')")

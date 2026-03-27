@@ -16,7 +16,7 @@
         /* 유저 정보 스타일 수정 */
         .user-info { font-size: 18px; color: #555; font-weight: 500; }
 
-        /* [추가] 프로필 링크 스타일: 클릭 가능해 보이게 처리 */
+        /* 프로필 링크 스타일: 클릭 가능해 보이게 처리 */
         .profile-link { text-decoration: none; color: inherit; cursor: pointer; transition: color 0.2s; }
         .profile-link:hover { color: #007bff; text-decoration: underline; font-weight: bold; }
 
@@ -28,7 +28,7 @@
         /* 카드 스타일 */
         .space-card { background-color: #f8f9fa; border: 1px solid #ced4da; padding: 25px; height: 180px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; }
         .card-top { font-size: 18px; font-weight: 600; color: #333; }
-        /* [추가] 카드 중간 정보 (관리자 이름 등) */
+        /* 카드 중간 정보 (관리자 이름 등) */
         .card-info { font-size: 14px; color: #666; margin-top: 10px; flex-grow: 1; }
         .card-bottom { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
 
@@ -60,7 +60,12 @@
 
 <div id="space_list" class="space-grid"></div>
 
+<div id="pagination_area" style="display: flex; justify-content: center; gap: 8px; margin-top: 40px;"></div>
+
 <script>
+    // 현재 보고 있는 페이지 번호를 저장하는 변수
+    let currentPage = 1;
+
     $(document).ready(function(){
         let accessToken = localStorage.getItem("accessToken");
         if(accessToken){
@@ -73,19 +78,16 @@
         }
 
         loadUserInfo();
-        loadSpaceList();
+        // 화면 진입 시 1페이지 로드
+        loadSpaceList(1);
     });
 
-    // [수정] 유저 정보를 불러와서 클릭 가능한 링크로 표시
     function loadUserInfo() {
         $.ajax({
             url: '/api/user',
             method: 'GET',
             success: function(data) {
-                // name이 있으면 name, 없으면 username 사용
                 let userName = data.name ? data.name : data.username;
-
-                // [변경 포인트] <a> 태그를 사용하여 클릭 시 /user/profile 로 이동하게 함
                 let htmlContent = `<a href="/user/profile" class="profile-link">${userName}님</a>`;
                 $("#user_info_area").html(htmlContent);
             },
@@ -95,23 +97,30 @@
         });
     }
 
-    function loadSpaceList(){
+    // 호출할 페이지 번호를 매개변수(page)로 받음
+    function loadSpaceList(page){
+        if (page) currentPage = page;
+
         $.ajax({
             url: '/api/userSpace/getDashboardSpaces',
             method: 'GET',
+            // 백엔드로 요청할 페이지 번호 전송
+            data: { callPage: currentPage },
             success: function (data) {
                 let listArea = $("#space_list");
                 listArea.empty();
 
-                if(!data || data.length === 0){
+                let spaceList = data.list;
+
+                if(!spaceList || spaceList.length === 0){
                     listArea.html("<p style='color:#777; padding:10px;'>참여 중인 스페이스가 없습니다.</p>");
+                    $("#pagination_area").empty(); // 데이터 없으면 페이징 버튼 영역도 비움
                     return;
                 }
 
-                $.each(data, function(index, us){
+                $.each(spaceList, function(index, us){
                     let groupName = us.groupName ? us.groupName : "그룹없음";
                     let workName = us.workName ? us.workName : "이름없음";
-                    // [추가] 관리자 이름 렌더링 (값이 없으면 '미배정' 표시)
                     let adminName = us.adminName ? us.adminName : "미배정";
 
                     let cardHtml = `
@@ -128,6 +137,9 @@
                     `;
                     listArea.append(cardHtml);
                 });
+
+                // 데이터 렌더링이 끝나면 페이징 네비게이션 렌더링
+                renderPagination(data.totalPage, data.callPage);
             },
             error: function (err) {
                 if(err.status === 401 || err.status === 403){
@@ -138,6 +150,32 @@
                 }
             }
         });
+    }
+
+    // 페이징 버튼 렌더링 함수
+    function renderPagination(totalPage, current) {
+        let pageHtml = "";
+
+        // 이전 페이지 버튼
+        if(current > 1) {
+            pageHtml += `<button onclick="loadSpaceList(${current - 1})" class="btn-header" style="width: auto; height: 35px; line-height: 35px; padding: 0 15px;">이전</button>`;
+        }
+
+        // 숫자 버튼 생성 (테스트용이므로 전체 페이지를 뿌립니다)
+        for(let i = 1; i <= totalPage; i++) {
+            if(i === current) {
+                pageHtml += `<button style="background-color: #007bff; color: white; border: none; border-radius: 4px; padding: 0 15px; height: 35px; font-weight: bold; cursor: default;">${i}</button>`;
+            } else {
+                pageHtml += `<button onclick="loadSpaceList(${i})" class="btn-header" style="width: auto; height: 35px; line-height: 35px; padding: 0 15px; border: none;">${i}</button>`;
+            }
+        }
+
+        // 다음 페이지 버튼
+        if(current < totalPage) {
+            pageHtml += `<button onclick="loadSpaceList(${current + 1})" class="btn-header" style="width: auto; height: 35px; line-height: 35px; padding: 0 15px;">다음</button>`;
+        }
+
+        $("#pagination_area").html(pageHtml);
     }
 
     function goSpaceDetail(spaceId) {
