@@ -12,44 +12,15 @@
         .header-area { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .page-title { font-size: 24px; font-weight: bold; color: #5a5c69; }
 
-        /* [추가] 버튼 그룹 정렬을 위한 스타일 */
         .btn-group-area { display: flex; gap: 10px; }
+        .btn-add-work { background-color: white; border: 1px solid #4e73df; color: #4e73df; padding: 8px 16px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+        .btn-add-work:hover { background-color: #4e73df; color: white; }
 
-        /* [추가] 업무 추가 버튼 (파란색 테두리) */
-        .btn-add-work {
-            background-color: white;
-            border: 1px solid #4e73df;
-            color: #4e73df;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-add-work:hover {
-            background-color: #4e73df;
-            color: white;
-        }
-
-        /* 기존 그룹 삭제 버튼 (붉은색 테두리) */
-        .btn-delete-group {
-            background-color: white;
-            border: 1px solid #e74a3b;
-            color: #e74a3b;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-delete-group:hover {
-            background-color: #e74a3b;
-            color: white;
-        }
+        .btn-delete-group { background-color: white; border: 1px solid #e74a3b; color: #e74a3b; padding: 8px 16px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+        .btn-delete-group:hover { background-color: #e74a3b; color: white; }
 
         .list-area { display: flex; flex-direction: column; gap: 15px; }
-        .space-item {
-            background: white; border: 1px solid #e3e6f0; border-radius: 5px;
-            padding: 20px; display: flex; justify-content: space-between; align-items: center;
-        }
+        .space-item { background: white; border: 1px solid #e3e6f0; border-radius: 5px; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
 
         .info-box div { margin-bottom: 3px; }
         .txt-title { font-size: 18px; font-weight: bold; color: #333; }
@@ -81,9 +52,15 @@
 </div>
 
 <script>
-    // URL에서 groupId 추출 (/group/spaceList/10)
+    // URL에서 groupId 추출
     const pathParts = location.pathname.split('/');
     const groupId = pathParts[pathParts.length - 1];
+
+    // --- 무한 스크롤 제어를 위한 전역 상태 변수 ---
+    let currentCursor = null; // 다음 데이터를 가져오기 위한 기준 ID
+    let isFetching = false;   // 중복 API 호출 방지용 플래그
+    let hasMoreData = true;   // 서버에 남은 데이터가 있는지 여부
+    const PER_PAGE = 10;      // 한 번에 가져올 데이터 개수
 
     $(document).ready(function(){
         let accessToken = localStorage.getItem("accessToken");
@@ -95,26 +72,60 @@
                 }
             });
         }
-        loadGroupSpaces();
+
+        // 1. 화면 진입 시 초기 데이터 10개 로드
+        loadGroupSpaces(true);
+
+        // 2. 스크롤 이벤트 감지
+        $(window).scroll(function() {
+            // 스크롤이 바닥에서 100px 정도 남았을 때 감지
+            if ($(window).scrollTop() + $(window).height() >= $(document).height() - 100) {
+                // 더 가져올 데이터가 있고, 통신 중이 아닐 때만 다음 페이지 요청
+                if (hasMoreData && !isFetching) {
+                    loadGroupSpaces(false);
+                }
+            }
+        });
     });
 
-    // 1. 그룹 내 스페이스 목록 조회
-    function loadGroupSpaces(){
+    // 1. 그룹 내 스페이스 목록 조회 (isInitialLoad: 첫 로드인지 여부)
+    function loadGroupSpaces(isInitialLoad = false){
+        if (isFetching) return;
+        isFetching = true;
+
+        let listArea = $("#space_list_area");
+
+        // 초기화 로드일 경우 상태 변수와 화면을 모두 비움
+        if (isInitialLoad) {
+            currentCursor = null;
+            hasMoreData = true;
+            listArea.empty();
+        }
+
         $.ajax({
             url: '/api/userSpace/getAdminSpaces',
             method: 'GET',
             data: {
-                groupId: groupId // 해당 그룹 ID
+                groupId: groupId,
+                cursor: currentCursor, // 직전 마지막 데이터의 ID 전송 (처음엔 null)
+                perPage: PER_PAGE,
+                orderWay: 'desc'       // 최신 생성순
             },
             success: function(data){
-                let listArea = $("#space_list_area");
-                listArea.empty();
-
-                if(!data || data.length === 0){
+                // 첫 진입 시 데이터가 아예 없는 경우
+                if(isInitialLoad && (!data || data.length === 0)){
                     listArea.html("<div class='text-center p-4'>스페이스가 없습니다.</div>");
+                    hasMoreData = false;
+                    isFetching = false;
                     return;
                 }
 
+                // 가져온 데이터가 요청한 perPage(10개)보다 적다면, 다음 데이터는 없음
+                if(!data || data.length < PER_PAGE) {
+                    hasMoreData = false;
+                }
+
+                // 데이터 렌더링
                 $.each(data, function(index, item){
                     let groupName = item.groupName || "그룹없음";
                     let workName = item.workName || "업무없음";
@@ -137,27 +148,30 @@
                         </div>
                     `;
                     listArea.append(html);
+
+                    // 핵심: 방금 그린 마지막 요소의 식별자(id)를 다음 커서로 업데이트
+                    currentCursor = item.id;
                 });
+
+                isFetching = false;
             },
             error: function(){
                 alert("목록을 불러오지 못했습니다.");
+                isFetching = false;
             }
         });
     }
 
-    // [추가] 2. 업무 추가 기능
+    // 2. 업무 추가 기능
     function addWork() {
-        // 1단계: 업무명 입력
         let workName = prompt("추가할 업무명을 입력하세요:");
         if (!workName || workName.trim() === "") return;
 
-        // 2단계: 이메일 입력 (선택사항)
         let userEmail = prompt("담당자 이메일을 입력하세요 (선택):");
 
         let _data = {
             groupId: groupId,
             workName: workName.trim(),
-            // ▼▼▼ 이메일 데이터 추가 (입력 안 했으면 빈 문자열)
             userEmail: userEmail ? userEmail.trim() : ""
         };
 
@@ -168,7 +182,8 @@
             data: JSON.stringify(_data),
             success: function() {
                 alert("업무가 추가되었습니다.");
-                loadGroupSpaces();
+                // 새 업무가 상단에 보이도록 목록을 싹 지우고 처음부터 다시 로드
+                loadGroupSpaces(true);
             },
             error: function(err) {
                 let msg = "업무 추가에 실패했습니다.";
@@ -196,24 +211,22 @@
         });
     }
 
-    // 그룹 삭제 기능 구현
+    // 4. 그룹 삭제 기능 구현
     function deleteGroup() {
-        if (!confirm("정말 이 그룹을 삭제하시겠습니까?\n그룹에 포함된 모든 업무(스페이스)도 함께 삭제됩니다.")) {
+        if (!confirm("정말 이 그룹을 삭제하시겠습니까?\\n그룹에 포함된 모든 업무(스페이스)도 함께 삭제됩니다.")) {
             return;
         }
 
-        let _data = {
-            id: groupId // URL에서 추출한 전역 변수 사용
-        };
+        let _data = { id: groupId };
 
         $.ajax({
-            url: '/api/group', // GroupRestController의 delete 메서드 호출
+            url: '/api/group',
             method: 'DELETE',
             contentType: 'application/json',
             data: JSON.stringify(_data),
             success: function() {
                 alert("그룹과 소속된 모든 업무가 삭제되었습니다.");
-                location.href = "/user/profile"; // 프로필로 이동
+                location.href = "/user/profile";
             },
             error: function(err) {
                 alert("그룹 삭제에 실패했습니다.");

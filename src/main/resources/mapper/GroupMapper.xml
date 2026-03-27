@@ -18,6 +18,9 @@
         WHERE tb_group.id is not null
         <if test = 'deleted != null'>AND tb_group.deleted = #{deleted}</if>
         <if test = 'groupName != null and groupName !=""'>AND tb_group.group_name LIKE CONCAT('%', #{groupName}, '%')</if>
+
+        <if test="status != null">AND user_space.status = #{status}</if>
+        <if test="role != null">AND user_space.role = #{role}</if>
     </sql>
 
     <select id="list" parameterType="hashMap"
@@ -25,5 +28,27 @@
         SELECT tb_group.id
         FROM tb_group
         <include refid="commonWhere"/>
+    </select>
+
+    <select id="scrollList" parameterType="hashMap" resultType="com.thc.capstone.dto.GroupDto$DetailResDto">
+        SELECT DISTINCT tb_group.id
+        FROM tb_group
+        JOIN space ON tb_group.id = space.group_id
+        JOIN user_space ON space.id = user_space.space_id
+
+        <include refid="commonWhere"/>
+        AND space.deleted = false
+        AND user_space.user_id = #{reqUserId}
+
+        <if test = "cursor != null">
+            <if test = "orderWay != null and orderWay =='desc'">AND #{cursor} > tb_group.id</if>
+            <if test = "orderWay != null and orderWay =='asc'">AND tb_group.id > #{cursor}</if>
+        </if>
+
+        ORDER BY tb_group.id
+        <if test = "orderWay != null and orderWay =='desc'"> DESC</if>
+        <if test = "orderWay != null and orderWay =='asc'"> ASC</if>
+
+        LIMIT 0, #{perPage}
     </select>
 </mapper>

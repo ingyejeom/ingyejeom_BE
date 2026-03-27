@@ -65,14 +65,15 @@ public interface UserSpaceService {
      * @param param 조회 필터 DTO (요청한 유저 ID, 상태, 역할, 속해있는 그룹)
      */
     List<UserSpaceDto.DetailResDto> list(UserSpaceDto.ListReqDto param);
+    List<UserSpaceDto.DetailResDto> scrollList(UserSpaceDto.ScrollListReqDto param);
 
     /**
-     * 프로필에서 본인이 속한 그룹 및 스페이스를 모두 띄우기
+     * 프로필에서 본인이 속한 스페이스를 스크롤 리스트로 모두 띄우기
      * @param param 필터 검색 조건 (요청한 유저 ID)
      * @param reqUserId 요청한 사용자 ID
      * @return 유저-스페이스의 상세 데이터 리스트 (역할, 상태, 유저 ID, 스페이스 ID, 그룹 ID, 그룹 이름, 업무 이름, 스페이스 코드)
      */
-    List<UserSpaceDto.DetailResDto> getProfileSpaces(UserSpaceDto.ListReqDto param, Long reqUserId);
+    List<UserSpaceDto.DetailResDto> getProfileSpaces(UserSpaceDto.ScrollListReqDto param, Long reqUserId);
 
     /**
      * 대시보드에 현재 사용자가 속한 스페이스 조회
@@ -82,10 +83,10 @@ public interface UserSpaceService {
     List<UserSpaceDto.DetailResDto> getDashboardSpaces(Long reqUserId);
 
     /**
-     * 그룹 관리에 띄울 스페이스 조회
+     * 그룹 관리에 띄울 스페이스를 스크롤 리스트로 조회
      * @param param 필터 검색 조건 (속해있는 그룹)
      * @param reqUserId 요청한 사용자 ID
      * @return 요청하는 그룹에서 사용자가 ADMIN 으로 존재하는 스페이스 리스트
      */
-    List<UserSpaceDto.DetailResDto> getAdminSpaces(UserSpaceDto.ListReqDto param, Long reqUserId);
+    List<UserSpaceDto.DetailResDto> getAdminSpaces(UserSpaceDto.ScrollListReqDto param, Long reqUserId);
 }

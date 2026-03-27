@@ -1,7 +1,10 @@
 package com.thc.capstone.dto;
 
 import com.thc.capstone.domain.Group;
+import com.thc.capstone.domain.Role;
 import com.thc.capstone.domain.Space;
+import com.thc.capstone.domain.UserSpaceStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -62,6 +65,27 @@ public class GroupDto {
         /**
          * 검색 조건 : 그룹 이름 (중간 글자 검색 가능)
          */
+        String groupName;
+    }
+
+    /**
+     * REQUEST
+     * 그룹 목록 조회 시 검색 데이터
+     * 대시보드에 현재 USER 로 참여 중인 스페이스 목록을 스크롤 리스트로 조회
+     */
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
+    public static class ScrollListReqDto extends DefaultDto.ScrollListReqDto {
+        /**
+         * 검색 조건 : 요청한 유저 ID, 상태, 역할, 그룹 이름
+         */
+        @Schema(hidden = true)
+        private Long reqUserId;
+
+        UserSpaceStatus status;
+
+        @Schema(hidden = true)
+        Role role;
+
         String groupName;
     }
 }

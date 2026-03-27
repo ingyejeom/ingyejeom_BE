@@ -45,4 +45,13 @@ public interface GroupService {
      * @return 그룹의 상세 데이터 리스트 (그룹 이름)
      */
     List<GroupDto.DetailResDto> list(GroupDto.ListReqDto param, Long reqUserId);
+    List<GroupDto.DetailResDto> scrollList(GroupDto.ScrollListReqDto param, Long reqUserId);
+
+    /**
+     * 프로필에서 본인이 속학 그룹을 모두 띄우기
+     * @param param 필터 검색 조건 (그룹 이름)
+     * @param reqUserId 요청한 사용자 ID
+     * @return 사용자가 ADMIN 으로 존재하는 그룹 리스트
+     */
+    List<GroupDto.DetailResDto> getProfileGroups(GroupDto.ScrollListReqDto param, Long reqUserId);
 }
