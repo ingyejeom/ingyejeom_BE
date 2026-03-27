@@ -193,17 +193,22 @@ public class UserSpaceServiceImpl implements UserSpaceService {
 
         return addlist(idList);
     }
-
-    // 프로필에서 본인이 속한 그룹 및 스페이스를 모두 띄우기
     @Override
-    public List<UserSpaceDto.DetailResDto> getProfileSpaces(UserSpaceDto.ListReqDto param, Long reqUserId) {
+    public List<UserSpaceDto.DetailResDto> scrollList(UserSpaceDto.ScrollListReqDto param) {
+        return addlist(userSpaceMapper.scrollList(param));
+    }
+
+    // 프로필에서 본인이 속한 스페이스를 모두 띄우기
+    @Override
+    public List<UserSpaceDto.DetailResDto> getProfileSpaces(UserSpaceDto.ScrollListReqDto param, Long reqUserId) {
         param.setReqUserId(reqUserId);
         param.setDeleted(false);
         if(param.getStatus() == null) {
             param.setStatus(UserSpaceStatus.ACTIVE);
+            param.setRole(Role.USER);
         }
 
-        return list(param);
+        return scrollList(param);
     }
 
     // 대시보드에 현재 사용자가 속한 스페이스
@@ -221,13 +226,13 @@ public class UserSpaceServiceImpl implements UserSpaceService {
 
     // 그룹관리를 위해 해당 그룹에서 관리자로 할당되어 있는 스페이스
     @Override
-    public List<UserSpaceDto.DetailResDto> getAdminSpaces(UserSpaceDto.ListReqDto param, Long reqUserId) {
+    public List<UserSpaceDto.DetailResDto> getAdminSpaces(UserSpaceDto.ScrollListReqDto param, Long reqUserId) {
         // 프론트에서 넘어온 param 객체(groupId 등 포함)에 서버 필수 조건만 세팅
         param.setReqUserId(reqUserId);
         param.setDeleted(false);
         param.setStatus(UserSpaceStatus.ACTIVE);
         param.setRole(Role.ADMIN);
         
-        return list(param);
+        return scrollList(param);
     }
 }

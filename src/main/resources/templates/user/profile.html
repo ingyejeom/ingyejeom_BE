@@ -20,27 +20,23 @@
         .profile-name { font-size: 22px; font-weight: bold; color: #5a5c69; margin-bottom: 5px; }
         .profile-email { font-size: 15px; color: #858796; margin-bottom: 30px; }
 
-        /* [추가] 로그아웃 버튼 스타일 */
         .btn-logout {
-            background-color: white;
-            border: 1px solid #e74a3b;
-            color: #e74a3b;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            cursor: pointer;
-            margin-top: 15px;
-            width: 80%;
-            transition: all 0.2s;
+            background-color: white; border: 1px solid #e74a3b; color: #e74a3b;
+            padding: 8px 16px; border-radius: 20px; font-size: 14px;
+            cursor: pointer; margin-top: 15px; width: 80%; transition: all 0.2s;
         }
-        .btn-logout:hover {
-            background-color: #e74a3b;
-            color: white;
-        }
+        .btn-logout:hover { background-color: #e74a3b; color: white; }
 
         /* 오른쪽 리스트 영역 */
         .list-section { flex: 1; }
         .section-header { font-size: 18px; font-weight: bold; color: #4e73df; margin-bottom: 15px; border-left: 4px solid #4e73df; padding-left: 10px; }
+
+        /* [추가] 독립 스크롤 영역 CSS */
+        .scrollable-list {
+            max-height: 400px; /* 원하는 스크롤 영역 높이 지정 */
+            overflow-y: auto;  /* 내용이 넘치면 스크롤 생성 */
+            padding-right: 10px;
+        }
 
         .card-item {
             background: white; border: 1px solid #e3e6f0; border-radius: 5px;
@@ -50,7 +46,6 @@
         .item-info strong { font-size: 18px; color: #333; }
         .item-info span { display: block; font-size: 14px; color: #888; margin-top: 4px; }
 
-        /* 버튼 스타일 */
         .btn-gray { background-color: #858796; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 14px; cursor: pointer; }
         .btn-yellow { background-color: #f6c23e; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 14px; cursor: pointer; }
         .btn-yellow:hover { background-color: #dfa528; }
@@ -68,31 +63,40 @@
             <div class="profile-icon">👤</div>
             <div id="text_name" class="profile-name">-</div>
             <div id="text_email" class="profile-email">-</div>
-
             <button class="btn-logout" onclick="logout()">로그아웃</button>
         </div>
 
         <div class="list-section">
-
             <div class="mb-5">
                 <div class="section-header">내 그룹 (관리자)</div>
-                <div id="admin_list_area">
-                </div>
+                <div id="admin_group_area" class="scrollable-list"></div>
             </div>
 
             <div>
                 <div class="section-header">참여 중인 업무 (사용자)</div>
-                <div id="user_list_area">
-                </div>
+                <div id="user_space_area" class="scrollable-list"></div>
             </div>
-
         </div>
     </div>
 </div>
 
 <script>
+    // --- 무한 스크롤 상태 관리 변수 완벽 분리 ---
+
+    // 1. 관리자 그룹용 전역 상태
+    let adminCursor = null;
+    let isAdminFetching = false;
+    let hasMoreAdmin = true;
+
+    // 2. 사용자 스페이스용 전역 상태
+    let userCursor = null;
+    let isUserFetching = false;
+    let hasMoreUser = true;
+
+    const PER_PAGE = 10;
+
     $(document).ready(function(){
-        // 1. 토큰 헤더 설정
+        // 토큰 설정
         let accessToken = localStorage.getItem("accessToken");
         if(accessToken){
             $.ajaxSetup({
@@ -103,17 +107,38 @@
             });
         }
 
-        // 2. 데이터 로드
+        // 초기 데이터 로드
         loadMyProfile();
-        loadMySpaces();
+        loadAdminGroups();
+        loadUserSpaces();
+
+        // [추가] 1. 관리자 그룹 영역 스크롤 이벤트 분리
+        $('#admin_group_area').scroll(function() {
+            let $this = $(this);
+            // 내부 스크롤이 바닥에 닿기 50px 전인지 계산
+            if ($this.scrollTop() + $this.innerHeight() >= this.scrollHeight - 50) {
+                if (hasMoreAdmin && !isAdminFetching) {
+                    loadAdminGroups();
+                }
+            }
+        });
+
+        // [추가] 2. 사용자 업무 영역 스크롤 이벤트 분리
+        $('#user_space_area').scroll(function() {
+            let $this = $(this);
+            if ($this.scrollTop() + $this.innerHeight() >= this.scrollHeight - 50) {
+                if (hasMoreUser && !isUserFetching) {
+                    loadUserSpaces();
+                }
+            }
+        });
     });
 
-    // 내 정보(이름, 이메일) 불러오기
+    // 내 정보 불러오기
     function loadMyProfile(){
         $.ajax({
             url: '/api/user',
             method: 'GET',
-            data: { deleted: false },
             success: function(data){
                 let name = data.name ? data.name : data.username;
                 let email = data.email ? data.email : "";
@@ -121,93 +146,110 @@
                 $("#text_email").text(email);
             },
             error: function(){
-                // 토큰 만료 등의 이유로 실패 시 로그인 페이지로
-                // location.href = "/user/login";
+                // 에러 처리
             }
         });
     }
 
-    // 스페이스 목록 불러와서 ADMIN(그룹핑), USER(나열) 분리
-    function loadMySpaces(){
-        $.ajax({
-            url: '/api/userSpace/getProfileSpaces',
-            method: 'GET',
-            data: { deleted: false },
-            success: function(data){
-                let adminArea = $("#admin_list_area");
-                let userArea = $("#user_list_area");
-                adminArea.empty();
-                userArea.empty();
+    // [수정] 1. 관리자 그룹 스크롤 조회 (Group API 연동)
+    function loadAdminGroups(){
+        isAdminFetching = true; // 통신 잠금
 
-                if(!data || data.length === 0){
-                    adminArea.html("<div class='p-2 text-muted'>관리 중인 그룹이 없습니다.</div>");
-                    userArea.html("<div class='p-2 text-muted'>참여 중인 업무가 없습니다.</div>");
+        $.ajax({
+            url: '/api/group/getProfileGroups',
+            method: 'GET',
+            data: { cursor: adminCursor, perPage: PER_PAGE, orderWay: 'desc', deleted: false },
+            success: function(data){
+                let area = $("#admin_group_area");
+
+                // 데이터가 전혀 없는 경우
+                if(!adminCursor && (!data || data.length === 0)){
+                    area.html("<div class='p-2 text-muted'>관리 중인 그룹이 없습니다.</div>");
+                    hasMoreAdmin = false;
+                    isAdminFetching = false;
                     return;
                 }
 
-                // ADMIN 그룹 중복 제거용 Map
-                let adminGroupSet = new Map();
+                // 받아온 데이터가 페이지 제한보다 적으면 다음 데이터 없음
+                if(!data || data.length < PER_PAGE) {
+                    hasMoreAdmin = false;
+                }
 
                 $.each(data, function(index, item){
-                    let role = item.role;
+                    let groupName = item.groupName ? item.groupName : "그룹없음";
+
+                    let html = `
+                        <div class="card-item">
+                            <div class="item-info">
+                                <strong>${groupName}</strong>
+                                <span>관리자 권한</span>
+                            </div>
+                            <button class="btn-gray" onclick="location.href='/group/spaceList/${item.id}'">그룹 관리</button>
+                        </div>
+                    `;
+                    area.append(html);
+
+                    // tb_group.id 를 다음 커서로 업데이트
+                    adminCursor = item.id;
+                });
+
+                isAdminFetching = false; // 통신 잠금 해제
+            },
+            error: function(){
+                isAdminFetching = false;
+            }
+        });
+    }
+
+    // [수정] 2. 참여 중인 업무 스크롤 조회 (UserSpace API 연동)
+    function loadUserSpaces(){
+        isUserFetching = true; // 통신 잠금
+
+        $.ajax({
+            url: '/api/userSpace/getProfileSpaces',
+            method: 'GET',
+            data: { cursor: userCursor, perPage: PER_PAGE, orderWay: 'desc', deleted: false },
+            success: function(data){
+                let area = $("#user_space_area");
+
+                if(!userCursor && (!data || data.length === 0)){
+                    area.html("<div class='p-2 text-muted'>참여 중인 업무가 없습니다.</div>");
+                    hasMoreUser = false;
+                    isUserFetching = false;
+                    return;
+                }
+
+                if(!data || data.length < PER_PAGE) {
+                    hasMoreUser = false;
+                }
+
+                $.each(data, function(index, item){
                     let groupName = item.groupName ? item.groupName : "그룹없음";
                     let workName = item.workName ? item.workName : "업무명없음";
                     let spaceCode = item.spaceCode ? item.spaceCode : "코드없음";
-                    let groupId = item.groupId;
+                    let adminName = item.adminName ? item.adminName : "미배정";
 
-                    // [추가] 권한에 따라 화면에 보여줄 대상(관리자 or 담당자) 결정
-                    let displayRoleInfo = "";
-                    if (role === 'USER') {
-                        displayRoleInfo = `관리자: ${item.adminName ? item.adminName : '미배정'}`;
-                    }
-
-                    if(role === 'ADMIN'){
-                        // 이미 등록된 그룹명이 아니면 그리기
-                        if(!adminGroupSet.has(groupName)){
-                            adminGroupSet.set(groupName, groupId);
-
-                            let html = `
-                                <div class="card-item">
-                                    <div class="item-info">
-                                        <strong>${groupName}</strong>
-                                        <span>관리자 권한</span>
-                                    </div>
-                                    <button class="btn-gray" onclick="location.href='/group/spaceList/${groupId}'">그룹 관리</button>
-                                </div>
-                            `;
-                            adminArea.append(html);
-                        }
-
-                    } else if(role === 'USER'){
-                        // USER는 모든 업무를 나열
-                        let html = `
-                            <div class="card-item">
-                                <div class="item-info">
-                                    <div style="font-size: 18px; font-weight: bold; color: #333;">
-                                        ${groupName}
-                                    </div>
-                                    <span style="display: block; font-size: 14px; color: #888; margin-top: 4px;">
-                                        ${workName}
-                                    </span>
-                                    <span style="display: block; font-size: 14px; color: #888; margin-top: 4px;">
-                                        [ ${spaceCode} ]
-                                    </span>
-                                    <span style="display: block; font-size: 14px; color: #4e73df; margin-top: 4px; font-weight: bold;">
-                                        ${displayRoleInfo}
-                                    </span>
-                                </div>
-                                <button class="btn-yellow" onclick="requestHandover(${item.spaceId})">인계하기</button>
+                    let html = `
+                        <div class="card-item">
+                            <div class="item-info">
+                                <div style="font-size: 18px; font-weight: bold; color: #333;">${groupName}</div>
+                                <span style="display: block; font-size: 14px; color: #888; margin-top: 4px;">${workName}</span>
+                                <span style="display: block; font-size: 14px; color: #888; margin-top: 4px;">[ ${spaceCode} ]</span>
+                                <span style="display: block; font-size: 14px; color: #4e73df; margin-top: 4px; font-weight: bold;">관리자: ${adminName}</span>
                             </div>
-                        `;
-                        userArea.append(html);
-                    }
+                            <button class="btn-yellow" onclick="requestHandover(${item.spaceId})">인계하기</button>
+                        </div>
+                    `;
+                    area.append(html);
+
+                    // user_space.id 를 다음 커서로 업데이트
+                    userCursor = item.id;
                 });
 
-                if(adminArea.is(':empty')) adminArea.html("<div class='p-2 text-muted'>관리 중인 그룹이 없습니다.</div>");
-                if(userArea.is(':empty')) userArea.html("<div class='p-2 text-muted'>참여 중인 업무가 없습니다.</div>");
+                isUserFetching = false; // 통신 잠금 해제
             },
-            error: function(err){
-                alert("목록을 불러오지 못했습니다.");
+            error: function(){
+                isUserFetching = false;
             }
         });
     }
@@ -230,11 +272,11 @@
         });
     }
 
-    // [추가] 로그아웃 함수
+    // 로그아웃 함수
     function logout() {
         if(confirm("로그아웃 하시겠습니까?")) {
-            localStorage.removeItem("accessToken"); // 토큰 삭제
-            location.href = "/user/login"; // 로그인 페이지로 이동
+            localStorage.removeItem("accessToken");
+            location.href = "/user/login";
         }
     }
 </script>

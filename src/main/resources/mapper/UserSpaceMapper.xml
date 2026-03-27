@@ -45,30 +45,44 @@
     <sql id="commonWhere">
         WHERE user_space.id is not null
         <if test = "deleted != null">AND user_space.deleted = #{deleted}</if>
-    </sql>
-
-    <!-- [euninjun] 프론트엔드에서 spaceId, groupName, workName 등을 필요로 하여 필드 추가 -->
-    <select id="list" parameterType="hashMap"
-            resultType="com.thc.capstone.dto.UserSpaceDto$DetailResDto">
-        SELECT user_space.id
-             , user_space.space_id as spaceId
-             , user_space.role
-             , user_space.status
-             , space.work_name as workName
-             , space.space_code as spaceCode
-             , tb_group.group_name as groupName
-             , tb_group.id as groupId
-        FROM user_space
-        LEFT JOIN space ON user_space.space_id = space.id
-        LEFT JOIN tb_group ON space.group_id = tb_group.id
-
-        <include refid="commonWhere"/>
         AND user_space.user_id = #{reqUserId}
 
         <if test="status != null">AND user_space.status = #{status}</if>
         <if test="role != null">AND user_space.role = #{role}</if>
-        <if test="deleted != null">AND space.deleted = #{deleted}</if>
         <if test="groupId != null">AND space.group_id = #{groupId}</if>
+    </sql>
+
+    <select id="list" parameterType="hashMap"
+            resultType="com.thc.capstone.dto.UserSpaceDto$DetailResDto">
+        SELECT user_space.id
+        FROM user_space
+        LEFT JOIN space ON user_space.space_id = space.id
+
+        AND space.deleted = false
+
+        <include refid="commonWhere"/>
+    </select>
+
+    <select id="scrollList" parameterType="hashMap" resultType="com.thc.capstone.dto.UserSpaceDto$DetailResDto">
+        SELECT user_space.id
+        FROM user_space
+        LEFT JOIN space ON user_space.space_id = space.id
+        LEFT JOIN tb_group ON space.group_id = tb_group.id
+
+        AND space.deleted = false
+
+        <include refid="commonWhere"/>
+
+        <if test = "cursor != null">
+            <if test = "orderWay != null and orderWay =='desc'">AND #{cursor} > user_space.id</if>
+            <if test = "orderWay != null and orderWay =='asc'">AND user_space.id > #{cursor}</if>
+        </if>
+
+        ORDER BY user_space.id
+        <if test = "orderWay != null and orderWay =='desc'"> DESC</if>
+        <if test = "orderWay != null and orderWay =='asc'"> ASC</if>
+
+        LIMIT 0, #{perPage}
     </select>
 
 <!--  Group과 Space의 Update에 대해서 권한을 체크하기 위함  -->

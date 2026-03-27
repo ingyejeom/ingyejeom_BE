@@ -113,4 +113,25 @@ public class UserSpaceDto {
 
         Long groupId;
     }
+
+    /**
+     * REQUEST
+     * 사용자-스페이스 목록 조회 시 검색 데이터
+     * 대시보드에 현재 USER 로 참여 중인 스페이스 목록을 스크롤 리스트로 조회
+     */
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
+    public static class ScrollListReqDto extends DefaultDto.ScrollListReqDto {
+        /**
+         * 검색 조건 : 요청한 유저 ID, 상태, 역할, 속해있는 그룹
+         */
+        @Schema(hidden = true)
+        private Long reqUserId;
+
+        UserSpaceStatus status;
+
+        @Schema(hidden = true)
+        Role role;
+
+        Long groupId;
+    }
 }

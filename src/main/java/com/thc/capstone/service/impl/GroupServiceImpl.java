@@ -143,4 +143,19 @@ public class GroupServiceImpl implements GroupService {
     public List<GroupDto.DetailResDto> list(GroupDto.ListReqDto param, Long reqUserId) {
         return addlist(groupMapper.list(param), reqUserId);
     }
+
+    @Override
+    public List<GroupDto.DetailResDto> scrollList(GroupDto.ScrollListReqDto param, Long reqUserId){
+        return addlist(groupMapper.scrollList(param), reqUserId);
+    }
+
+    @Override
+    public List<GroupDto.DetailResDto> getProfileGroups(GroupDto.ScrollListReqDto param, Long reqUserId) {
+        param.setReqUserId(reqUserId);
+        param.setDeleted(false);
+        param.setStatus(UserSpaceStatus.ACTIVE);
+        param.setRole(Role.ADMIN);
+
+        return scrollList(param, reqUserId);
+    }
 }

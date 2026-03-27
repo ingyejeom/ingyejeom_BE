@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -64,5 +65,12 @@ public class GroupRestController {
             description = "모든 그룹의 정보를 리스트로 조회합니다.")
     public ResponseEntity<List<GroupDto.DetailResDto>> list(GroupDto.ListReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         return ResponseEntity.ok(groupService.list(param, getUserId(principalDetails)));
+    }
+
+    @GetMapping("/getProfileGroups")
+    @Operation(summary = "그룹 스크롤 리스트",
+            description = "필터링을 통한 그룹 리스트를 스크롤 리스트로 조회")
+    public ResponseEntity<List<GroupDto.DetailResDto>> getProfileGroups(GroupDto.ScrollListReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        return ResponseEntity.ok(groupService.getProfileGroups(param, getUserId(principalDetails)));
     }
 }

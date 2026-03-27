@@ -9,6 +9,8 @@ public interface UserSpaceMapper {
     UserSpaceDto.DetailResDto detail(Long id);
     List<UserSpaceDto.DetailResDto> list(UserSpaceDto.ListReqDto param);
 
+    List<UserSpaceDto.DetailResDto> scrollList(UserSpaceDto.ScrollListReqDto param);
+
     // 그룹 수정 권한 확인
     boolean isGroupAdmin(Map<String, Object> param);
 

@@ -7,4 +7,6 @@ import java.util.List;
 public interface GroupMapper {
     GroupDto.DetailResDto detail(Long id);
     List<GroupDto.DetailResDto> list(GroupDto.ListReqDto param);
+
+    List<GroupDto.DetailResDto> scrollList(GroupDto.ScrollListReqDto param);
 }
