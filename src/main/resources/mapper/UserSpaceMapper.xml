@@ -63,6 +63,34 @@
         <include refid="commonWhere"/>
     </select>
 
+    <select id="pagedList" parameterType="hashMap" resultType="com.thc.capstone.dto.UserSpaceDto$DetailResDto">
+        SELECT user_space.id
+        FROM user_space
+        LEFT JOIN space ON user_space.space_id = space.id
+        LEFT JOIN tb_group ON space.group_id = tb_group.id
+
+        AND space.deleted = false
+
+        <include refid="commonWhere"/>
+
+        ORDER BY user_space.id
+        <if test = "orderWay =='asc'">ASC </if>
+        <if test = "orderWay =='desc'">DESC </if>
+
+        Limit #{calculatedOffset}, #{perPage}
+    </select>
+
+    <select id="listCount" parameterType="hashMap" resultType="Integer">
+        SELECT count(user_space.id)
+        FROM user_space
+        LEFT JOIN space ON user_space.space_id = space.id
+        LEFT JOIN tb_group ON space.group_id = tb_group.id
+
+        AND space.deleted = false
+
+        <include refid="commonWhere"/>
+    </select>
+
     <select id="scrollList" parameterType="hashMap" resultType="com.thc.capstone.dto.UserSpaceDto$DetailResDto">
         SELECT user_space.id
         FROM user_space

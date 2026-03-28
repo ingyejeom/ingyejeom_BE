@@ -194,6 +194,20 @@ public class UserSpaceServiceImpl implements UserSpaceService {
         return addlist(idList);
     }
     @Override
+    public DefaultDto.PagedListResDto<UserSpaceDto.DetailResDto> pagedList(UserSpaceDto.PagedListReqDto param) {
+        // 조건에 맞는 전체 데이터의 개수를 조회합니다. (페이지 계산용)
+        int listCount = userSpaceMapper.listCount(param);
+
+        // offset 과 perPage 에 맞게 잘라온 해당 페이지의 ID 목록을 조회합니다.
+        List<UserSpaceDto.DetailResDto> idList = userSpaceMapper.pagedList(param);
+
+        // 기존 흐름대로 ID 목록을 기반으로 조인된 상세 데이터 리스트를 완성합니다.
+        List<UserSpaceDto.DetailResDto> dtoList = addlist(idList);
+
+        // 제네릭이 적용된 DTO 의 정적 팩토리 메서드(of)를 호출하여 최종 응답 객체를 깔끔하게 조립합니다.
+        return DefaultDto.PagedListResDto.of(param, listCount, dtoList);
+    }
+    @Override
     public List<UserSpaceDto.DetailResDto> scrollList(UserSpaceDto.ScrollListReqDto param) {
         return addlist(userSpaceMapper.scrollList(param));
     }
@@ -213,15 +227,14 @@ public class UserSpaceServiceImpl implements UserSpaceService {
 
     // 대시보드에 현재 사용자가 속한 스페이스
     @Override
-    public List<UserSpaceDto.DetailResDto> getDashboardSpaces(Long reqUserId) {
-        UserSpaceDto.ListReqDto param = UserSpaceDto.ListReqDto.builder()
-                .reqUserId(reqUserId)
-                .deleted(false)
-                .status(UserSpaceStatus.ACTIVE)
-                .role(Role.USER)
-                .build();
+    public DefaultDto.PagedListResDto<UserSpaceDto.DetailResDto> getDashboardSpaces(UserSpaceDto.PagedListReqDto param, Long reqUserId) {
+        param.setReqUserId(reqUserId);
+        param.setDeleted(false);
+        param.setStatus(UserSpaceStatus.ACTIVE);
+        param.setRole(Role.USER);
+        param.setPerPage(7); // 대시보드는 7개로 강제 고정
 
-        return list(param);
+        return pagedList(param);
     }
 
     // 그룹관리를 위해 해당 그룹에서 관리자로 할당되어 있는 스페이스

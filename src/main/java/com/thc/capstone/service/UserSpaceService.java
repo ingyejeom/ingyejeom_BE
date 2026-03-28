@@ -65,6 +65,7 @@ public interface UserSpaceService {
      * @param param 조회 필터 DTO (요청한 유저 ID, 상태, 역할, 속해있는 그룹)
      */
     List<UserSpaceDto.DetailResDto> list(UserSpaceDto.ListReqDto param);
+    DefaultDto.PagedListResDto<UserSpaceDto.DetailResDto> pagedList(UserSpaceDto.PagedListReqDto param);
     List<UserSpaceDto.DetailResDto> scrollList(UserSpaceDto.ScrollListReqDto param);
 
     /**
@@ -80,7 +81,7 @@ public interface UserSpaceService {
      * @param reqUserId 요청한 사용자 ID
      * @return 현재 접속 중인 사용자가 USER 로 존재하는 스페이스 리스트
      */
-    List<UserSpaceDto.DetailResDto> getDashboardSpaces(Long reqUserId);
+    DefaultDto.PagedListResDto<UserSpaceDto.DetailResDto> getDashboardSpaces(UserSpaceDto.PagedListReqDto param, Long reqUserId);
 
     /**
      * 그룹 관리에 띄울 스페이스를 스크롤 리스트로 조회

@@ -36,7 +36,7 @@ public class DefaultDto {
         Boolean deleted;
     }
 
-    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class PagedListReqDto {
         @Builder.Default
         private Integer callPage = 1;
@@ -48,7 +48,7 @@ public class DefaultDto {
         private String orderWay;
         private Boolean deleted;
 
-        // DB 조회를 위한 Offset은 상태 변경 없이 계산값만 반환
+        // DB 조회를 위한 Offset 은 상태 변경 없이 계산값만 반환
         public int getCalculatedOffset() {
             int page = Math.max(1, this.callPage);
             int size = Math.max(2, this.perPage);
