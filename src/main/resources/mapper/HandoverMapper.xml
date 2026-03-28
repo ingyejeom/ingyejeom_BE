@@ -21,6 +21,7 @@
             h.folder_id AS folderId,
             us.space_id AS spaceId,
             s.work_name AS workName,
+            g.id AS groupId,
             g.group_name AS groupName,
             u.name AS userName
         FROM handover h
@@ -77,7 +78,7 @@
     </select>
 
     <!--
-        특정 UserSpace의 최신 인수인계 문서 조회
+        특정 UserSpace의 최신 인수인계 문서 조회11
         스페이스 목록에서 '인수인계' 버튼 클릭 시 기존 문서 존재 여부를 확인한다.
         문서가 여러 개일 경우 가장 최근 생성된 문서를 반환한다.
     -->
@@ -95,6 +96,7 @@
             h.folder_id AS folderId,
             us.space_id AS spaceId,
             s.work_name AS workName,
+            g.id AS groupId,
             g.group_name AS groupName,
             u.name AS userName
         FROM handover h
