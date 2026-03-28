@@ -93,6 +93,7 @@ public class HandoverDto {
         private Long spaceId;
         private Long folderId;
         private String workName;
+        private Long groupId;
         private String groupName;
         private String userName;
     }
