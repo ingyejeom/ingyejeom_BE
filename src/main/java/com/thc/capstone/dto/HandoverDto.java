@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 인수인계 문서 데이터 전송 객체 모음
@@ -109,5 +110,17 @@ public class HandoverDto {
         private Long id;
         /** null이면 루트 폴더로 이동한다. */
         private Long targetFolderId;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @SuperBuilder
+    public static class SaveReqDto {
+        private MultipartFile pdfFile;
+        private MultipartFile mdFile;
+        private Long spaceId;
+        private Long folderId;
     }
 }

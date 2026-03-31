@@ -1,15 +1,22 @@
 package com.thc.capstone.controller;
 
+import com.thc.capstone.dto.ChatbotDto;
 import com.thc.capstone.dto.DefaultDto;
+import com.thc.capstone.dto.FileDto;
 import com.thc.capstone.dto.HandoverDto;
 import com.thc.capstone.security.PrincipalDetails;
+import com.thc.capstone.service.ChatbotService;
+import com.thc.capstone.service.FileService;
 import com.thc.capstone.service.HandoverService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +32,8 @@ import java.util.Map;
 public class HandoverRestController {
 
     private final HandoverService handoverService;
+    private final FileService fileService;
+    private final ChatbotService chatbotService;
 
     /**
      * Spring Security 인증 정보에서 사용자 ID를 추출한다.
@@ -177,5 +186,36 @@ public class HandoverRestController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(result);
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping(value = "/save", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> handoverUpload(
+            @ModelAttribute HandoverDto.SaveReqDto param,
+            @AuthenticationPrincipal PrincipalDetails principal
+    ) throws IOException {
+        Long userId = getUserId(principal);
+
+        // .PDF 인수인계서 처리 (저장 O, 챗봇 ingest X)
+        if (param.getPdfFile() != null && !param.getPdfFile().isEmpty()) {
+            // FileService가 기존 UploadReqDto를 사용하므로 객체 변환
+            FileDto.UploadReqDto pdfReq = FileDto.UploadReqDto.builder()
+                    .file(param.getPdfFile())
+                    .spaceId(param.getSpaceId())
+                    .folderId(param.getFolderId())
+                    .build();
+
+            fileService.upload(pdfReq, userId); // 자료실 저장 완료
+        }
+
+        // .MD 인수인계서 처리 (저장 X, 챗봇 ingest O)
+        if (param.getMdFile() != null && !param.getMdFile().isEmpty()) {
+            byte[] mdFileBytes = param.getMdFile().getBytes();
+
+            ChatbotDto.IngestReqDto ingestReqDto = ChatbotDto.IngestReqDto.builder().spaceId(param.getSpaceId()).fileBytes(mdFileBytes).fileName(param.getMdFile().getOriginalFilename()).build();
+            chatbotService.ingestRequest(ingestReqDto, userId);
+        }
+
+        return ResponseEntity.ok().build();
     }
 }
