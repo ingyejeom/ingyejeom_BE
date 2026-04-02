@@ -63,3 +63,9 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+bootJar {
+    if(project.hasProperty('prod')) {
+        exclude('templates/**')
+    }
+}
