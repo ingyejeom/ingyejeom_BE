@@ -58,6 +58,9 @@ dependencies {
     runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.11.5'
     //implementation 'com.auth0:java-jwt:4.4.0'
     implementation group: 'com.auth0', name: 'java-jwt', version: '4.4.0'
+
+    // AWS S3 연동을 위한 스타터
+    implementation 'io.awspring.cloud:spring-cloud-starter-aws:2.4.4'
 }
 
 tasks.named('test') {
