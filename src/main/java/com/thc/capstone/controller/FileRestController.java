@@ -117,7 +117,6 @@ public class FileRestController {
         String contentType = null;
 
         try {
-            // 예: "보고서.pdf" 라는 이름만 보고 "application/pdf" 인지 알아냅니다.
             contentType = Files.probeContentType(Paths.get(resourceDto.getOriginalFileName()));
         } catch (Exception e) {}
 
