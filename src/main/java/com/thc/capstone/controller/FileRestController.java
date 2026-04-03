@@ -114,7 +114,12 @@ public class FileRestController {
         }
 
         // 파일의 타입을 추론
-        String contentType = Files.probeContentType(Paths.get(resource.getFile().getAbsolutePath()));
+        String contentType = null;
+
+        try {
+            // 예: "보고서.pdf" 라는 이름만 보고 "application/pdf" 인지 알아냅니다.
+            contentType = Files.probeContentType(Paths.get(resourceDto.getOriginalFileName()));
+        } catch (Exception e) {}
 
         // 타입을 못 알아냈을 경우 기본값 설정
         if(contentType == null) {
@@ -124,7 +129,7 @@ public class FileRestController {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition + "; filename=\"" + encodedUploadFileName + "\"")
-                .body(resourceDto.getResource());
+                .body(resource);
     }
 
     @PutMapping("/move")
