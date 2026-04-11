@@ -29,9 +29,6 @@ import java.util.List;
 public class FileRestController {
     final FileService fileService;
 
-    // 파일 업로드 완료 후 파이썬 RAG 서버로 벡터화(Ingest)를 요청하기 위해 ChatbotService를 추가했습니다.
-    private final ChatbotService chatbotService;
-
     // 요청한 사용자 ID 추출
     public Long getUserId(PrincipalDetails principalDetails) {
         if(principalDetails != null && principalDetails.getUser() != null) {
@@ -48,15 +45,7 @@ public class FileRestController {
             @ModelAttribute FileDto.UploadReqDto param,
             @AuthenticationPrincipal PrincipalDetails principal
     ) throws IOException {
-        byte[] fileBytes = param.getFile().getBytes();// file.getBytes()(파일 입출력 과정) 발생할 수 있는 예외를 처리하기 위해 IOException 추가했습니다.
-        String savedFilePath = fileService.upload(param, getUserId(principal));
-        // 파일이 저장이 되고 저장된 주소를 확인하여 저장이 잘 됐는지 판단합니다.
-        if(savedFilePath != null && !savedFilePath.isEmpty()) {
-            // 판단 후 저장이 잘 됐다면 ChatbotDto.IngestReqDto 객체를 생성하고 챗봇 서버로 ingest 요청을 보내기 위해 챗봇서비스 계층에 요청합니다.
-            ChatbotDto.IngestReqDto ingestReqDto = ChatbotDto.IngestReqDto.builder().spaceId(param.getSpaceId()).fileBytes(fileBytes).fileName(param.getFile().getOriginalFilename()).build();
-            chatbotService.ingestRequest(ingestReqDto, getUserId(principal));
-        }
-
+        fileService.upload(param, getUserId(principal));
         return ResponseEntity.ok().build();
     }
 

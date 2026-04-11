@@ -1,12 +1,14 @@
 package com.thc.capstone.service.impl;
 
 import com.thc.capstone.domain.*;
+import com.thc.capstone.dto.ChatbotDto;
 import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.FileDto;
 import com.thc.capstone.mapper.FileMapper;
 import com.thc.capstone.repository.FileRepository;
 import com.thc.capstone.repository.FolderRepository;
 import com.thc.capstone.repository.UserSpaceRepository;
+import com.thc.capstone.service.ChatbotService;
 import com.thc.capstone.service.FileService;
 import com.thc.capstone.service.S3Service;
 import jakarta.transaction.Transactional;
@@ -17,6 +19,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.UUID;
@@ -27,6 +30,8 @@ import java.util.UUID;
 public class FileServiceImpl implements FileService {
 
     private final S3Service s3Service;
+    // 파일 업로드 완료 후 파이썬 RAG 서버로 벡터화(Ingest)를 요청하기 위해 ChatbotService를 추가했습니다.
+    private final ChatbotService chatbotService;
 
     private final FileRepository fileRepository;
     private final FolderRepository folderRepository;
@@ -36,39 +41,96 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional
-    public String upload(FileDto.UploadReqDto param, Long reqUserId) {
+    public void upload(FileDto.UploadReqDto param, Long reqUserId) {
         // 스페이스에 파일을 올릴 권한이 있는지 확인 (ACTIVE 한 사람)
         UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(reqUserId, param.getSpaceId(), UserSpaceStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException("해당 스페이스에 대한 권한이 없습니다"));
 
         // 파일 추출
-        MultipartFile multipartFile = param.getFile();
-        if(multipartFile == null || multipartFile.isEmpty()) {
-            return "";
+        List<MultipartFile> multipartFiles = param.getFiles();
+        if(multipartFiles == null || multipartFiles.isEmpty()) {
+            return;
         }
 
-        // 표시용 파일명
-        String originalFilename = multipartFile.getOriginalFilename();
-        // UUID 가 적용된 파일명 (UNIQUE)
-        String storeFileName = createStoreFileName(originalFilename);
+        for(MultipartFile multipartFile : multipartFiles) {
+            if (multipartFile.isEmpty()) continue;
 
-        // 파일이 S3에 저장된 경로
-        String fileUrl = s3Service.upload(multipartFile, storeFileName);
+            try {
+                // 표시용 파일명
+                String originalFilename = multipartFile.getOriginalFilename();
+                // UUID 가 적용된 파일명 (UNIQUE)
+                String storeFileName = createStoreFileName(originalFilename);
 
-        // 파일 정보 생성 및 DB에 저장
-        File file = File.of(
-                originalFilename,
-                storeFileName,
-                fileUrl,
-                multipartFile.getSize(),
-                userSpace.getId(),
-                param.getFolderId()
-        );
+                byte[] fileBytes = multipartFile.getBytes();
+                // 파일이 S3에 저장된 경로
+                String fileUrl = s3Service.upload(multipartFile, storeFileName);
 
-        fileRepository.save(file);
+                // 파일 정보 생성 및 DB에 저장
+                File file = File.of(
+                        originalFilename,
+                        storeFileName,
+                        fileUrl,
+                        multipartFile.getSize(),
+                        userSpace.getId(),
+                        param.getFolderId()
+                );
+                fileRepository.save(file);
 
-        return fileUrl;
-        // 파일 저장이 성공한 경우 파이썬에 넘기기 위해 저장 경로를 반환하는 로직을 추가했습니다.
+                ChatbotDto.IngestReqDto ingestReqDto = ChatbotDto.IngestReqDto.builder()
+                        .spaceId(param.getSpaceId())
+                        .fileBytes(fileBytes)
+                        .fileName(originalFilename)
+                        .build();
+
+                chatbotService.ingestRequest(ingestReqDto, reqUserId);
+
+            } catch (IOException e) {
+                throw new RuntimeException("파일 저장 중 오류가 발생했습니다.");
+            }
+        }
+    }
+
+    @Override
+    @Transactional
+    public void uploadOnly(FileDto.UploadReqDto param, Long reqUserId) { // 챗봇 ingest 호출 없는 S3와 DB에만 저장하는 메서드
+        // 스페이스에 파일을 올릴 권한이 있는지 확인 (ACTIVE 한 사람)
+        UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(reqUserId, param.getSpaceId(), UserSpaceStatus.ACTIVE)
+                .orElseThrow(() -> new RuntimeException("해당 스페이스에 대한 권한이 없습니다"));
+
+        // 파일 추출
+        List<MultipartFile> multipartFiles = param.getFiles();
+        if(multipartFiles == null || multipartFiles.isEmpty()) {
+            return;
+        }
+
+        for(MultipartFile multipartFile : multipartFiles) {
+            if (multipartFile.isEmpty()) continue;
+
+            try {
+                // 표시용 파일명
+                String originalFilename = multipartFile.getOriginalFilename();
+                // UUID 가 적용된 파일명 (UNIQUE)
+                String storeFileName = createStoreFileName(originalFilename);
+
+                byte[] fileBytes = multipartFile.getBytes();
+                // 파일이 S3에 저장된 경로
+                String fileUrl = s3Service.upload(multipartFile, storeFileName);
+
+                // 파일 정보 생성 및 DB에 저장
+                File file = File.of(
+                        originalFilename,
+                        storeFileName,
+                        fileUrl,
+                        multipartFile.getSize(),
+                        userSpace.getId(),
+                        param.getFolderId()
+                );
+                fileRepository.save(file);
+
+            } catch (IOException e) {
+                throw new RuntimeException("파일 저장 중 오류가 발생했습니다.");
+            }
+        }
     }
 
     @Override
@@ -107,7 +169,7 @@ public class FileServiceImpl implements FileService {
                 .orElseThrow(() -> new RuntimeException("파일이 존재하지 않음"));
 
         // S3에서도 파일 삭제
-        s3Service.delete(file.getStoreFileName());
+        // s3Service.delete(file.getStoreFileName());
 
         // 파일 삭제 및 DB에 저장
         file.delete();

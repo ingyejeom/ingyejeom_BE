@@ -22,7 +22,7 @@ public class FileDto {
     public static class UploadReqDto {
         Long spaceId;
         Long folderId;
-        MultipartFile file;
+        List<MultipartFile> files;
     }
 
     /**
