@@ -14,7 +14,9 @@ public interface FileService {
      * @param reqUserId 요청한 사용자 ID
      * @return 파일의 저장 경로
      */
-    String upload(FileDto.UploadReqDto param, Long reqUserId);
+    void upload(FileDto.UploadReqDto param, Long reqUserId);
+
+    void uploadOnly(FileDto.UploadReqDto param, Long reqUserId);
 
     /**
      * 폴더를 생성합니다.

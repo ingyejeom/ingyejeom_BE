@@ -200,12 +200,12 @@ public class HandoverRestController {
         if (param.getPdfFile() != null && !param.getPdfFile().isEmpty()) {
             // FileService가 기존 UploadReqDto를 사용하므로 객체 변환
             FileDto.UploadReqDto pdfReq = FileDto.UploadReqDto.builder()
-                    .file(param.getPdfFile())
+                    .files(List.of(param.getPdfFile()))
                     .spaceId(param.getSpaceId())
                     .folderId(param.getFolderId())
                     .build();
 
-            fileService.upload(pdfReq, userId); // 자료실 저장 완료
+            fileService.uploadOnly(pdfReq, userId); // 자료실 저장 완료
         }
 
         // .MD 인수인계서 처리 (저장 X, 챗봇 ingest O)
