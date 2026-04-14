@@ -1,0 +1,8 @@
+.git
+.gitignore
+node_modules
+frontend/node_modules
+build
+!build/libs/
+.gradle
+**/.DS_Store
