@@ -1,65 +1,61 @@
 package com.thc.capstone.dto;
 
-import com.thc.capstone.domain.Role;
-import com.thc.capstone.domain.Space;
+import com.thc.capstone.domain.Approval;
+import com.thc.capstone.domain.StepStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import java.util.List;
-
-public class SpaceDto {
+public class ApprovalDto {
     /**
      * REQUEST
-     * 스페이스 생성 데이터
+     * 서명테이블 생성 데이터
      */
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class CreateReqDto {
-        String workName;
-        String spaceCode;
-        Long groupId; // (FK)
+        Long spaceId;
 
-        String userEmail; // 이메일로 사용자를 조회하여 UserSpace 생성
+        Long assigneeId;
 
-        public Space toEntity(){
-            return Space.of(getWorkName(), getSpaceCode(), getGroupId());
+        public Approval toEntity(){
+            return Approval.of(StepStatus.ASSIGNOR_TURN, getSpaceId());
         }
     }
 
     /**
      * REQUEST
-     * 스페이스 정보 수정 데이터
+     * 서명 테이블 수정 데이터
      */
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class UpdateReqDto extends DefaultDto.UpdateReqDto {
-        String workName;
+        StepStatus stepStatus;
     }
 
     /**
      * RESPONSE
-     * 스페이스 상세 데이터
+     * 서명 테이블 상세 데이터
      */
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class DetailResDto extends DefaultDto.DetailResDto {
-        String workName;
-        String spaceCode;
+        StepStatus stepStatus;
+        Long spaceId;
 
-        String groupName;
-
-        Long currentApprovalId;
+        Long assignorId;
+        Long assigneeId;
+        Long adminId;
     }
 
     /**
      * REQUEST
-     * 스페이스 목록 조회 시 검색 데이터
+     * 서명 테이블 목록 조회 시 검색 데이터
      */
     @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
     public static class ListReqDto extends DefaultDto.ListReqDto {
         /**
-         * 검색 조건 : 업무명 (중간 글자 검색 가능)
+         * 검색 조건 : 진행 상태
          */
-        String workName;
+        StepStatus stepStatus;
     }
 }

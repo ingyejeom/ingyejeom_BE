@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0/EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thc.capstone.mapper.UserApprovalMapper">
+    <select id="detail" parameterType="hashMap"
+            resultType="com.thc.capstone.dto.UserApprovalDto$DetailResDto">
+        SELECT user_approval.id
+             , user_approval.deleted
+             , user_approval.created_at as createdAt
+             , user_approval.modified_at as modifiedAt
+
+             , user_approval.approval_role as approvalRole
+            , user_approval.user_id as userId
+            , user_approval.approval_id as approvalId
+        FROM user_approval
+        WHERE user_approval.id = #{id}
+    </select>
+
+    <!--  공통 WHERE 절  -->
+    <sql id="commonWhere">
+        WHERE user_approval.id is not null
+        <if test = 'deleted != null'>AND user_approval.deleted = #{deleted}</if>
+    </sql>
+
+    <select id="list" parameterType="hashMap"
+            resultType="com.thc.capstone.dto.UserApprovalDto$DetailResDto">
+        SELECT user_approval.id
+        FROM user_approval
+        <include refid="commonWhere"/>
+    </select>
+</mapper>

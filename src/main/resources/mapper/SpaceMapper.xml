@@ -12,6 +12,13 @@
             , space.space_code as spaceCode
 
             , tb_group.group_name as groupName
+
+            , (SELECT approval.id
+               FROM approval
+               WHERE space.id = approval.space_id
+                 AND approval.step_status != 'COMPLETED'
+                 AND approval.deleted = false
+                LIMIT 1) as currentApprovalId
         FROM space
         LEFT JOIN tb_group ON space.group_id = tb_group.id
         WHERE space.id = #{id}
