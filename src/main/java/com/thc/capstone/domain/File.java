@@ -1,5 +1,6 @@
 package com.thc.capstone.domain;
 
+import com.thc.capstone.dto.FileDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -63,9 +64,15 @@ public class File extends AuditingFields {
     }
 
     /**
-     * 기존에 Update 를 이용하여 진행하던 삭제 기능을 직접 구현
+     * 그룹 수정
+     * 수정 항목 : 그룹 이름
      */
-    public void delete() {
-        this.setDeleted(true);
+    public void update(FileDto.FileUpdateReqDto param){
+        if(param.getDeleted() != null){
+            setDeleted(param.getDeleted());
+        }
+        if(param.getOriginalFileName() != null){
+            setOriginalFileName(param.getOriginalFileName());
+        }
     }
 }

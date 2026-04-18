@@ -49,11 +49,29 @@ public class FileRestController {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping("")
+    @Operation(summary = "파일 정보 수정",
+            description = "파일 정보를 수정합니다. (파일 이름)")
+    public ResponseEntity<Void> updateFile(@RequestBody FileDto.FileUpdateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        fileService.updateFile(param, getUserId(principalDetails));
+
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/folder")
     @Operation(summary = "폴더 생성",
             description = "새로운 폴더를 생성합니다. 부모 폴더 ID를 지정하여 트리 구조를 만들 수 있습니다.")
     public ResponseEntity<Void> createFolder(@RequestBody FileDto.CreateFolderReqDto param, @AuthenticationPrincipal PrincipalDetails principal) {
         fileService.createFolder(param, getUserId(principal));
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/folder")
+    @Operation(summary = "폴더 정보 수정",
+            description = "폴더 정보를 수정합니다. (폴더 이름)")
+    public ResponseEntity<Void> updateFolder(@RequestBody FileDto.FolderUpdateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails){
+        fileService.updateFolder(param, getUserId(principalDetails));
+
         return ResponseEntity.ok().build();
     }
 

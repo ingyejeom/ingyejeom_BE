@@ -24,6 +24,14 @@ public class FileDto {
         Long folderId;
         List<MultipartFile> files;
     }
+    /**
+     * REQUEST
+     * 파일 정보 수정 데이터
+     */
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
+    public static class FileUpdateReqDto extends DefaultDto.UpdateReqDto {
+        String originalFileName;
+    }
 
     /**
      * REQUEST

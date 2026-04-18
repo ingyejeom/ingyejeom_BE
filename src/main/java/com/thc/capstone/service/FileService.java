@@ -19,6 +19,13 @@ public interface FileService {
     void uploadOnly(FileDto.UploadReqDto param, Long reqUserId);
 
     /**
+     * 파일 정보 수정
+     * @param param 수정 가능한 파일 정보 (파일 이름)
+     * @param reqUserId 요청한 사용자 ID
+     */
+    void updateFile(FileDto.FileUpdateReqDto param, Long reqUserId);
+
+    /**
      * 폴더를 생성합니다.
      * @param param 폴더 생성에 필요한 데이터 (스페이스 ID, 부모 폴더 ID, 폴더 이름)
      * @param reqUserId 요청한 사용자 ID

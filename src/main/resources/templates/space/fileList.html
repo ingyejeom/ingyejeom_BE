@@ -107,10 +107,14 @@
         .btn-down  { background-color: #f6c23e; } /* 다운로드 */
         .btn-del   { background-color: #e74a3b; } /* 삭제 */
 
+        /* 🌟 추가: 이름 변경 버튼 (녹색) */
+        .btn-edit  { background-color: #1cc88a; }
+
         .btn-action:hover { opacity: 0.9; }
 
         /* 빈 폴더 안내 */
         .empty-msg { grid-column: 1/-1; text-align: center; padding: 50px; color: #858796; }
+
 
     </style>
 </head>
@@ -201,7 +205,8 @@
 
                     // A. 폴더인 경우
                     if(item.type === 'FOLDER') {
-                        // 폴더는 '받는 역할(Drop Target)'도 수행 (Drop, Over, Leave)
+                        let safeName = item.name.replace(/'/g, "\\'"); // 파일명에 ' 가 있을 경우 예외 방지
+
                         html = `
                             <div class="item-card" ${dragAttr}
                                  ondragover="handleDragOver(event)"
@@ -213,7 +218,8 @@
                                 <div class="item-meta">폴더</div>
 
                                 <div class="hover-overlay">
-                                    <button onclick="enterFolder(${item.id}, '${item.name}')" class="btn-action btn-enter">열기</button>
+                                    <button onclick="enterFolder(${item.id}, '${safeName}')" class="btn-action btn-enter">열기</button>
+                                    <button onclick="renameFolder(${item.id}, '${safeName}')" class="btn-action btn-edit">이름 변경</button>
                                     <button onclick="deleteFolder(${item.id})" class="btn-action btn-del">삭제</button>
                                 </div>
                             </div>
@@ -222,6 +228,8 @@
                     // B. 파일인 경우
                     else {
                         let sizeMB = (item.size / (1024 * 1024)).toFixed(2) + " MB";
+                        let safeName = item.name.replace(/'/g, "\\'");
+
                         html = `
                             <div class="item-card" ${dragAttr}>
                                 <div class="item-icon">📄</div>
@@ -232,6 +240,7 @@
                                 <div class="hover-overlay">
                                     <a href="/space/fileViewer?id=${item.id}" target="_blank" class="btn-action btn-view">미리보기</a>
                                     <a href="/api/file/${item.id}?mode=download" class="btn-action btn-down">다운로드</a>
+                                    <button onclick="renameFile(${item.id}, '${safeName}')" class="btn-action btn-edit">이름 변경</button>
                                     <button onclick="deleteFile(${item.id})" class="btn-action btn-del">삭제</button>
                                 </div>
                             </div>
@@ -524,6 +533,57 @@
         }
     }
 
+    // ==========================================
+    // 🌟 추가: 파일 및 폴더 이름 변경 (Update)
+    // ==========================================
+
+    // 폴더 이름 변경
+    function renameFolder(folderId, currentName) {
+        let newName = prompt("새 폴더 이름을 입력하세요:", currentName);
+
+        // 입력 취소, 빈칸, 혹은 이름이 바뀌지 않았으면 API 호출 안 함
+        if (!newName || newName.trim() === "" || newName.trim() === currentName) return;
+
+        $.ajax({
+            url: '/api/file/folder',
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                id: folderId,
+                name: newName.trim()
+            }),
+            success: function() {
+                loadItems(); // 성공 시 새로고침
+            },
+            error: function(err) {
+                alert("폴더 이름 변경 실패: " + (err.responseText || "오류"));
+            }
+        });
+    }
+
+    // 파일 이름 변경
+    function renameFile(fileId, currentName) {
+        // UX: 사용자에게 확장자 유지를 권장하는 안내 문구 추가
+        let newName = prompt("새 파일 이름을 입력하세요 (확장자 포함 권장):", currentName);
+
+        if (!newName || newName.trim() === "" || newName.trim() === currentName) return;
+
+        $.ajax({
+            url: '/api/file',
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                id: fileId,
+                originalFileName: newName.trim()
+            }),
+            success: function() {
+                loadItems();
+            },
+            error: function(err) {
+                alert("파일 이름 변경 실패: " + (err.responseText || "오류"));
+            }
+        });
+    }
 </script>
 
 </body>
