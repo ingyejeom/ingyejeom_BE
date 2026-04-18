@@ -134,6 +134,15 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
+    public void updateFile(FileDto.FileUpdateReqDto param, Long reqUserId) {
+        File file = fileRepository.findById(param.getId())
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 파일입니다"));
+
+        file.update(param);
+        fileRepository.save(file);
+    }
+
+    @Override
     @Transactional
     public void createFolder(FileDto.CreateFolderReqDto param, Long reqUserId) {
         // 권한 체크 (업로드와 동일)
@@ -172,7 +181,10 @@ public class FileServiceImpl implements FileService {
         // s3Service.delete(file.getStoreFileName());
 
         // 파일 삭제 및 DB에 저장
-        file.delete();
+        file.update(FileDto.FileUpdateReqDto.builder()
+                .id(param.getId())
+                .deleted(true)
+                .build());
         fileRepository.save(file);
     }
 
