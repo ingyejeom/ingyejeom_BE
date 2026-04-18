@@ -354,6 +354,11 @@
         .btn-delete { color: #e74a3b; border-color: #e74a3b; }
         .btn-delete:hover { background: #e74a3b; color: white; }
 
+        /* 🌟 추가: 서명 버튼 스타일 */
+        .btn-sign { background-color: #f6c23e; border-color: #f6c23e; color: white; }
+        .btn-sign:hover:not(:disabled) { background-color: #dda20a; color: white; }
+        .btn-sign:disabled { background-color: #e0e0e0; border-color: #e0e0e0; color: #999; cursor: not-allowed; }
+
         .back-link { position: absolute; top: 20px; left: 20px; text-decoration: none; color: #666; font-size: 14px; }
 
         /* Chat UI */
@@ -409,6 +414,9 @@
     </div>
 
     <div class="button-area">
+        <!-- 서명 버튼 -->
+        <button id="btn_sign_handover" class="btn-action btn-sign" disabled onclick="goToSignPage()">📝 서명하기</button>
+        <!--  -->
         <button class="btn-action" onclick="updateWorkName()">업무명 수정</button>
         <button class="btn-action btn-delete" onclick="deleteSpace()">스페이스 삭제</button>
     </div>
@@ -422,6 +430,9 @@
     let currentCursor = null;
     let isFetchingHistory = false;
     let hasMoreHistory = true;
+
+    // 추가: 현재 진행 중인 인계 ID (서명)
+    let activeApprovalId = null;
 
     $(document).ready(function () {
         let accessToken = localStorage.getItem("accessToken");
@@ -462,12 +473,25 @@
             success: function (data) {
                 $("#text_group_name").text(data.groupName ? data.groupName : "그룹없음");
                 $("#text_work_name").text(data.workName);
+
+                // 🌟 수정: 결재건이 있으면 disabled 속성 제거
+                if(data.currentApprovalId) {
+                    activeApprovalId = data.currentApprovalId;
+                    $("#btn_sign_handover").prop("disabled", false);
+                }
             },
             error: function () {
                 alert("스페이스 정보를 불러오지 못했습니다.");
                 location.href = "/space/list";
             }
         });
+    }
+
+    // 🌟 추가: 서명 페이지 이동
+    function goToSignPage() {
+        if(activeApprovalId) {
+            location.href = `/approval/detail/${activeApprovalId}`;
+        }
     }
 
     // 🌟 (리팩토링) 메시지 HTML 노드를 생성해서 반환하는 함수 (배열 통째로 넣기 위함)

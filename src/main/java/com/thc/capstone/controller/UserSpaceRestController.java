@@ -27,6 +27,7 @@ public class UserSpaceRestController {
         return null;
     }
 
+    /*
     @Operation(summary = "스페이스 참여",
             description = "스페이스 코드를 입력하여 스페이스에 참여합니다.")
     @PostMapping("/join")
@@ -34,6 +35,7 @@ public class UserSpaceRestController {
         userSpaceService.join(param, getUserId(principalDetails));
         return ResponseEntity.ok().build();
     }
+    */
 
     @Operation(summary = "스페이스 초대",
             description = "이메일을 통해 해당 유저를 스페이스에 초대합니다.")

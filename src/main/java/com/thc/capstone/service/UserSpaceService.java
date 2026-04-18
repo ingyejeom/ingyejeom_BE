@@ -13,7 +13,9 @@ public interface UserSpaceService {
      * @param param 참여에 필요한 데이터 (스페이스 코드)
      * @param reqUserId 요청한 사용자 ID
      */
+    /*
     void join(UserSpaceDto.JoinReqDto param, Long reqUserId);
+    */
 
     /**
      * 스페이스 초대

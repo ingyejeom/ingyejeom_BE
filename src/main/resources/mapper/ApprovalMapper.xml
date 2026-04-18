@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0/EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thc.capstone.mapper.ApprovalMapper">
+    <select id="detail" parameterType="hashMap"
+            resultType="com.thc.capstone.dto.ApprovalDto$DetailResDto">
+        SELECT approval.id
+             , approval.deleted
+             , approval.created_at as createdAt
+             , approval.modified_at as modifiedAt
+
+             , approval.step_status as stepStatus
+             , approval.space_id as spaceId
+
+             , MAX(CASE WHEN user_approval.approval_role = 'ASSIGNOR' THEN user_approval.user_id END) as assignorId
+             , MAX(CASE WHEN user_approval.approval_role = 'ASSIGNEE' THEN user_approval.user_id END) as assigneeId
+             , MAX(CASE WHEN user_approval.approval_role = 'ADMIN' THEN user_approval.user_id END) as adminId
+
+        FROM approval
+                 LEFT JOIN user_approval ON approval.id = user_approval.approval_id AND user_approval.deleted = false
+        WHERE approval.id = #{id}
+        GROUP BY approval.id
+    </select>
+
+    <!--  UserApproval 생성시 인계자와 관리자의 ID를 찾기 위함  -->
+    <select id="findAssignorIdBySpaceId" parameterType="Long" resultType="java.lang.Long">
+        SELECT user_id
+        FROM user_space
+        WHERE space_id = #{spaceId}
+          AND role = 'USER'
+          AND status = 'ACTIVE'
+          AND deleted = false
+            LIMIT 1
+    </select>
+
+    <select id="findAdminIdBySpaceId" parameterType="Long" resultType="java.lang.Long">
+        SELECT user_id
+        FROM user_space
+        WHERE space_id = #{spaceId}
+          AND role = 'ADMIN'
+          AND status = 'ACTIVE'
+          AND deleted = false
+            LIMIT 1
+    </select>
+
+    <!--  서명 순서 검증을 위함 -->
+    <select id="hasRoleByApprovalIdAndUserId" parameterType="map" resultType="boolean">
+        SELECT COUNT(id) > 0
+        FROM user_approval
+        WHERE approval_id = #{approvalId}
+          AND user_id = #{reqUserId}
+          AND approval_role = #{requiredRole}
+          AND deleted = false
+    </select>
+
+    <!--  서명 완료 후 UserSpace 의 인계를 위함  -->
+    <select id="findUserSpaceIdByStatus" parameterType="map" resultType="java.lang.Long">
+        SELECT id
+        FROM user_space
+        WHERE space_id = #{spaceId}
+          AND role = 'USER'
+          AND status = #{status}
+          AND deleted = false
+            LIMIT 1
+    </select>
+
+    <!-- 현재 인계 중인 스페이스에 대해서 권한을 제한하기 위함 -->
+    <select id="isHandoverInProgress" parameterType="Long" resultType="boolean">
+        SELECT COUNT(id) > 0
+        FROM approval
+        WHERE space_id = #{spaceId}
+          AND step_status != 'COMPLETED'
+          AND deleted = false
+    </select>
+
+    <!--  공통 WHERE 절  -->
+    <sql id="commonWhere">
+        WHERE approval.id is not null
+        <if test = 'deleted != null'>AND approval.deleted = #{deleted}</if>
+        <if test = 'stepStatus != null and stepStatus !=""'>AND approval.step_status LIKE CONCAT('%', #{stepStatus}, '%')</if>
+    </sql>
+
+    <select id="list" parameterType="hashMap"
+            resultType="com.thc.capstone.dto.ApprovalDto$DetailResDto">
+        SELECT approval.id
+        FROM approval
+        <include refid="commonWhere"/>
+    </select>
+</mapper>

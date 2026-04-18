@@ -48,6 +48,7 @@
         AND user_space.user_id = #{reqUserId}
 
         <if test="status != null">AND user_space.status = #{status}</if>
+        <if test="status == null">AND user_space.status IN ('ACTIVE', 'PENDING')</if>
         <if test="role != null">AND user_space.role = #{role}</if>
         <if test="groupId != null">AND space.group_id = #{groupId}</if>
     </sql>
