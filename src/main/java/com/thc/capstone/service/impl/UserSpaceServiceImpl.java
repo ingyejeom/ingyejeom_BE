@@ -28,12 +28,6 @@ public class UserSpaceServiceImpl implements UserSpaceService {
     final UserSpaceMapper userSpaceMapper;
     final UserRepository userRepository;
 
-    // ApprovalService 와 UserSpaceService 가 서로를 호출하여 생기는 순환 참조를 방지하기 위해
-    // ApprovalService 는 빌드 시점이 아닌 호출 시점에 작동하도록 함
-    @Lazy
-    @Autowired
-    ApprovalService approvalService;
-
 /*
     // 스페이스 참여
     @Override
@@ -79,24 +73,6 @@ public class UserSpaceServiceImpl implements UserSpaceService {
                     .build());
         }
     }*/
-
-    // 스페이스 초대
-    @Override
-    @Transactional
-    public void invite(UserSpaceDto.InviteReqDto param, Long reqUserId) {
-        // 사용자 이메일 존재 여부 검증
-        User targetUser = userRepository.findByEmail(param.getEmail())
-                .orElseThrow(() -> new RuntimeException("해당 이메일을 가진 유저가 없습니다."));
-
-        // 2. ApprovalDto 세팅
-        ApprovalDto.CreateReqDto createReqDto = ApprovalDto.CreateReqDto.builder()
-                .spaceId(param.getSpaceId())
-                .assigneeId(targetUser.getId())
-                .build();
-
-        // 3. Approval 생성 및 인계 절차 시작
-        approvalService.create(createReqDto, reqUserId);
-    }
 
     @Override
     public DefaultDto.CreateResDto create(UserSpaceDto.CreateReqDto param) {

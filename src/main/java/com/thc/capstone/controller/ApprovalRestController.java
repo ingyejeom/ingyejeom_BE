@@ -28,6 +28,15 @@ public class ApprovalRestController {
         return null;
     }
 
+    @Operation(summary = "인수인계 시작",
+            description = "이메일을 통해 해당 유저를 대상으로 인수인계를 위한 서명 기능이 시작됩니다")
+    @PostMapping("/start")
+    public ResponseEntity<Void> start(@RequestBody ApprovalDto.InviteReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
+        approvalService.startHandover(param, getUserId(principalDetails));
+
+        return ResponseEntity.ok().build();
+    }
+
     @PreAuthorize("hasRole('USER')")
     @Operation(summary = "서명 테이블 생성",
             description = "서명 테이블 정보를 받아 새로운 서명 테이블를 생성합니다.")

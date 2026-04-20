@@ -15,6 +15,10 @@
              , MAX(CASE WHEN user_approval.approval_role = 'ASSIGNEE' THEN user_approval.user_id END) as assigneeId
              , MAX(CASE WHEN user_approval.approval_role = 'ADMIN' THEN user_approval.user_id END) as adminId
 
+            , MAX(CASE WHEN user_approval.approval_role = 'ASSIGNOR' THEN user_approval.signed_at END) as assignorSignedAt
+            , MAX(CASE WHEN user_approval.approval_role = 'ASSIGNEE' THEN user_approval.signed_at END) as assigneeSignedAt
+            , MAX(CASE WHEN user_approval.approval_role = 'ADMIN' THEN user_approval.signed_at END) as adminSignedAt
+
         FROM approval
                  LEFT JOIN user_approval ON approval.id = user_approval.approval_id AND user_approval.deleted = false
         WHERE approval.id = #{id}

@@ -66,7 +66,7 @@
         let accessToken = localStorage.getItem("accessToken");
 
         $.ajax({
-            url: '/api/userSpace/invite',
+            url: '/api/approval/start',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({

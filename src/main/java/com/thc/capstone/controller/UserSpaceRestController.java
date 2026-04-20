@@ -37,14 +37,6 @@ public class UserSpaceRestController {
     }
     */
 
-    @Operation(summary = "스페이스 초대",
-            description = "이메일을 통해 해당 유저를 스페이스에 초대합니다.")
-    @PostMapping("/invite")
-    public ResponseEntity<Void> invite(@RequestBody UserSpaceDto.InviteReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
-        userSpaceService.invite(param, getUserId(principalDetails));
-        return ResponseEntity.ok().build();
-    }
-
     @Operation(summary = "유저-스페이스 관계 생성",
             description = "스페이스 생성 시 내부적으로 유저-스페이스 관계가 생성됩니다.")
     @PostMapping("")

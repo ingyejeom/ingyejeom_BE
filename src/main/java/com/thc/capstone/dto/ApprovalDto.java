@@ -8,7 +8,15 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDateTime;
+
 public class ApprovalDto {
+    @Getter @Setter @NoArgsConstructor @AllArgsConstructor @SuperBuilder
+    public static class InviteReqDto {
+        private String email;
+        private Long spaceId;
+    }
+
     /**
      * REQUEST
      * 서명테이블 생성 데이터
@@ -45,6 +53,10 @@ public class ApprovalDto {
         Long assignorId;
         Long assigneeId;
         Long adminId;
+
+        LocalDateTime assignorSignedAt;
+        LocalDateTime assigneeSignedAt;
+        LocalDateTime adminSignedAt;
     }
 
     /**

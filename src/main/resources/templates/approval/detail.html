@@ -6,7 +6,7 @@
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <style>
         body {
-            background-color: #f8f9fc;
+            background-color: #e9ecef; /* 공적인 문서 배경 느낌 */
             margin: 0;
             height: 100vh;
             display: flex;
@@ -15,13 +15,13 @@
             padding: 30px;
         }
 
-        /* 전체 레이아웃 (좌 3 : 우 1) */
+        /* 전체 레이아웃 */
         .layout-container {
             display: flex;
             width: 100%;
-            max-width: 1600px;
+            max-width: 1400px; /* 너무 넓지 않게 컴팩트하게 조정 */
             margin: 0 auto;
-            gap: 30px;
+            gap: 20px;
             height: 100%;
         }
 
@@ -29,107 +29,160 @@
         .pledge-section {
             flex: 3;
             background: white;
-            padding: 50px 60px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 40px 50px;
+            border-radius: 2px; /* 문서 느낌을 위해 둥근 모서리 최소화 */
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             overflow-y: auto;
-            font-family: 'Batang', 'Nanum Myeongjo', serif;
-            color: #333;
-            line-height: 1.8;
+            font-family: 'Batang', 'Nanum Myeongjo', serif; /* 명조체 유지 */
+            color: #222;
+            line-height: 1.7;
             position: relative;
         }
 
-        /* 우측 결재란 영역 */
+        /* 우측 결재란 영역 (컴팩트) */
         .signature-section {
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: flex-end;
-            gap: 15px;
-        }
-
-        .back-link { position: absolute; top: 25px; left: 30px; text-decoration: none; color: #858796; font-size: 14px; font-family: 'Malgun Gothic', sans-serif; border: 1px solid #d1d3e2; padding: 6px 12px; border-radius: 4px; transition: 0.2s;}
-        .back-link:hover { background-color: #eaecf4; }
-
-        .doc-title { text-align: center; font-size: 32px; font-weight: bold; margin-bottom: 40px; border-bottom: 2px solid #000; padding-bottom: 20px; margin-top: 20px;}
-        .article-title { font-size: 18px; font-weight: bold; margin-top: 35px; margin-bottom: 12px; }
-        .clause { margin-bottom: 15px; text-align: justify; }
-        .clause strong { background-color: #f8f9fa; padding: 2px 6px; border: 1px solid #ddd; border-radius: 3px;}
-        .strike { text-decoration: line-through; color: #999; }
-        .final-consent { margin-top: 60px; background-color: #f8f9fa; padding: 25px; border: 1px solid #ddd; font-size: 15px; border-radius: 8px;}
-
-        /* 결재 박스 */
-        .sign-box {
+            justify-content: flex-end; /* 하단 배치 */
+            gap: 0; /* 결재 박스들을 표처럼 딱 붙임 */
             background: white;
-            border: 2px solid #e3e6f0;
-            border-radius: 8px;
-            overflow: hidden;
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-            transition: all 0.3s;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 2px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            height: fit-content;
+            margin-top: auto;
         }
-        .sign-title { background: #f8f9fc; color: #5a5c69; padding: 10px 0; font-size: 15px; font-weight: bold; border-bottom: 1px solid #e3e6f0; }
-        .sign-content { height: 110px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative;}
 
-        .status-stamp { font-size: 26px; font-weight: bold; color: #e74a3b; border: 3px solid #e74a3b; padding: 5px 15px; border-radius: 8px; transform: rotate(-10deg); display: none; }
-        .status-text { font-size: 15px; color: #858796; font-weight: bold;}
+        .approval-header { text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 10px; border-bottom: 2px solid #333; padding-bottom: 5px; font-family: 'Malgun Gothic', sans-serif;}
 
-        /* 🌟 수정: 버튼 그룹 스타일 */
-        .action-buttons { display: flex; gap: 8px; justify-content: center; display: none; }
+        .back-link { position: absolute; top: 20px; left: 25px; text-decoration: none; color: #555; font-size: 13px; font-family: 'Malgun Gothic', sans-serif; border: 1px solid #ccc; padding: 4px 10px; background: #f9f9f9; transition: 0.2s;}
+        .back-link:hover { background-color: #eaeaea; }
 
-        .btn-sign { background-color: #4e73df; color: white; border: none; padding: 10px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 15px; transition: 0.2s;}
+        .doc-title { text-align: center; font-size: 28px; font-weight: bold; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 15px; margin-top: 15px;}
+        .article-title { font-size: 17px; font-weight: bold; margin-top: 25px; margin-bottom: 10px; }
+        .clause { margin-bottom: 12px; text-align: justify; font-size: 15px;}
+        .clause strong { background-color: #f1f1f1; padding: 1px 5px; border: 1px solid #ccc; }
+        .strike { text-decoration: line-through; color: #999; }
+        .final-consent { margin-top: 40px; background-color: #f9f9f9; padding: 20px; border: 1px solid #ccc; font-size: 14.5px; }
+
+        /* 🌟 공적인 결재 박스 UI (표 형식) */
+        .sign-box {
+            display: flex;
+            border: 1px solid #000;
+            border-bottom: none;
+            background: white;
+            height: 90px; /* 높이를 컴팩트하게 축소 */
+            box-sizing: border-box;
+            position: relative;
+        }
+        .sign-box:last-child { border-bottom: 1px solid #000; } /* 마지막 줄만 하단 선 추가 */
+
+        /* 좌측 타이틀 (역할) */
+        .sign-title {
+            width: 90px;
+            background: #f4f4f4;
+            color: #000;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid #000;
+            text-align: center;
+            padding: 5px;
+            font-family: 'Batang', 'Nanum Myeongjo', serif;
+        }
+
+        /* 우측 내용 (서명, 버튼, 시간) */
+        .sign-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .status-text { font-size: 14px; color: #999; font-family: 'Malgun Gothic', sans-serif;}
+
+        /* 🌟 공적인 도장 느낌 */
+        .status-stamp {
+            font-size: 16px;
+            font-weight: bold;
+            color: #cc0000;
+            border: 2px solid #cc0000;
+            border-radius: 50%; /* 원형 도장 느낌 */
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            display: none;
+            font-family: 'Batang', serif;
+        }
+
+        /* 🌟 서명 시간 표시란 */
+        .sign-time {
+            position: absolute;
+            bottom: 2px;
+            right: 5px;
+            font-size: 11px;
+            color: #555;
+            font-family: 'Courier New', Courier, monospace; /* 시간은 명확한 폰트로 */
+            display: none;
+        }
+
+        /* 액션 버튼 그룹 (컴팩트) */
+        .action-buttons { display: flex; gap: 5px; justify-content: center; display: none; }
+        .btn-sign { background-color: #4e73df; color: white; border: none; padding: 6px 12px; cursor: pointer; font-weight: bold; font-size: 13px; }
         .btn-sign:hover { background-color: #2e59d9; }
-
-        .btn-reject { background-color: #e74a3b; color: white; border: none; padding: 10px 18px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 15px; transition: 0.2s; }
+        .btn-reject { background-color: #e74a3b; color: white; border: none; padding: 6px 12px; cursor: pointer; font-weight: bold; font-size: 13px; }
         .btn-reject:hover { background-color: #c82333; }
 
-        /* 내 차례 강조 애니메이션 */
+        /* 내 차례 강조 애니메이션 (선 테두리를 푸르게 변경) */
         @keyframes glow {
-            0% { box-shadow: 0 0 5px rgba(78, 115, 223, 0.2); border-color: #4e73df; }
-            50% { box-shadow: 0 0 15px rgba(78, 115, 223, 0.6); border-color: #4e73df; }
-            100% { box-shadow: 0 0 5px rgba(78, 115, 223, 0.2); border-color: #4e73df; }
+            0% { box-shadow: inset 0 0 5px rgba(78, 115, 223, 0.2); }
+            50% { box-shadow: inset 0 0 15px rgba(78, 115, 223, 0.6); }
+            100% { box-shadow: inset 0 0 5px rgba(78, 115, 223, 0.2); }
         }
-        .my-turn-active { animation: glow 1.5s infinite; }
-        .my-turn-active .sign-title { background: #4e73df; color: white; border-bottom: none; }
+        .my-turn-active { animation: glow 1.5s infinite; background-color: #fcfcfc;}
 
-        /* 모달 스타일 (서명용) */
+        /* 모달 스타일 */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 40px; border-radius: 12px; width: 550px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);}
-        .target-sentence { font-size: 17px; font-weight: bold; color: #e74a3b; background: #fdf3f2; padding: 20px; border-radius: 8px; margin: 25px 0; letter-spacing: -0.5px; border: 1px solid #fad3d0;}
-        .sign-input { width: 90%; padding: 15px; font-size: 16px; border: 2px solid #e3e6f0; border-radius: 8px; text-align: center; margin-bottom: 25px; transition: 0.2s;}
+        .modal-content { background: white; padding: 30px; border-radius: 4px; width: 500px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); font-family: 'Malgun Gothic', sans-serif;}
+        .target-sentence { font-size: 16px; font-weight: bold; color: #000; background: #f1f1f1; padding: 15px; margin: 20px 0; border: 1px solid #ccc;}
+        .sign-input { width: 90%; padding: 12px; font-size: 15px; border: 1px solid #ccc; text-align: center; margin-bottom: 20px; }
         .sign-input:focus { outline: none; border-color: #4e73df; }
-        .modal-btns button { padding: 12px 25px; font-size: 15px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s;}
-        .btn-cancel { background: #eaecf4; color: #5a5c69; margin-right: 12px; }
-        .btn-cancel:hover { background: #d1d3e2; }
+        .modal-btns button { padding: 10px 20px; font-size: 14px; cursor: pointer; border: none; font-weight: bold; }
+        .btn-cancel { background: #ddd; color: #333; margin-right: 10px; }
         .btn-submit { background: #4e73df; color: white; }
         .btn-submit:disabled { background: #b7c6eb; cursor: not-allowed; }
-        .btn-submit:not(:disabled):hover { background: #2e59d9; }
 
         /* 스크롤바 디자인 */
-        .pledge-section::-webkit-scrollbar { width: 8px; }
-        .pledge-section::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px;}
-        .pledge-section::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px;}
-        .pledge-section::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        .pledge-section::-webkit-scrollbar { width: 6px; }
+        .pledge-section::-webkit-scrollbar-track { background: #f1f1f1; }
+        .pledge-section::-webkit-scrollbar-thumb { background: #ccc; }
     </style>
 </head>
 <body>
 
 <div class="layout-container">
     <div class="pledge-section">
-        <a href="javascript:history.back()" class="back-link">← 뒤로 가기</a>
+        <a href="javascript:history.back()" class="back-link">← 돌아가기</a>
         <div class="doc-title">업무 인수인계 서약서</div>
 
         <div class="article-title">제 1 조 [인계자(전임자) 서약 사항]</div>
         <div class="clause"><strong>[정보의 완전성]</strong> 본인은 해당 업무와 관련된 모든 데이터, 산출물, 진행 이력 및 참고 문헌을 고의적인 누락 없이 본 스페이스에 온전히 이관하였습니다.</div>
         <div class="clause"><strong>[정보의 무결성]</strong> 제공된 자료와 인수인계서에는 허위 사실, 왜곡된 내용, 악의적인 정보 및 잘못된 정보가 포함되어 있지 않음을 보증합니다.</div>
         <div class="clause"><strong>[책임 소재]</strong> 본 서약 이후, 고의적인 정보 은폐나 허위 자료 제공으로 인해 발생한 업무상 중대한 손실에 대한 귀책사유는 본인에게 있음을 인지하고 동의합니다.</div>
-        <div class="clause strike"><strong>[사후 지원 및 하자 보수]</strong> 본 서약이 완료된 이후라도 [영업일 기준 7일] 이내에 인수인계 자료의 중대한 누락이나 치명적인 오류가 발견되어 인수자가 요청할 경우, 본인은 즉각적인 보완 및 사후 지원을 성실히 이행할 의무가 있음을 확인합니다.</div>
 
         <div class="article-title">제 2 조 [인수자(후임자) 서약 사항]</div>
         <div class="clause"><strong>[자료 검증 및 수령]</strong> 본인은 인계자가 구성한 스페이스 내의 모든 업로드 문서와 인수인계서를 충분한 시간을 들여 열람하고 검증하였습니다.</div>
         <div class="clause"><strong>[이의 없음]</strong> 업무 수행에 필요한 모든 자료를 빠짐없이 정상적으로 인수하였으며, 제공된 자료의 내용 및 현재 스페이스 상태에 어떠한 이의도 없음을 확인합니다.</div>
         <div class="clause"><strong>[권한 및 책임 이관]</strong> 본 서약이 완료된 시점부터 해당 업무(스페이스)의 운영, 관리 및 후속 조치에 대한 모든 실무적 권한과 책임은 본인에게 귀속됨을 동의합니다.</div>
-        <div class="clause strike"><strong>[기밀 유지 의무]</strong> 본 스페이스를 통해 열람 및 취득한 모든 업무 산출물을 회사의 핵심 자산으로 취급하며, 사내 보안 규정에 어긋나는 외부 유출 및 무단 공유를 절대 금할 것을 서약합니다.</div>
 
         <div class="article-title">제 3 조 [그룹 관리자 승인 사항]</div>
         <div class="clause"><strong>[절차의 정당성]</strong> 본인은 본 스페이스의 인수인계 절차가 관리 감독하에 정상적이고 적법하게 진행되었음을 확인합니다.</div>
@@ -139,43 +192,49 @@
         <div class="final-consent">
             <strong>[최종 동의 및 전자 서명]</strong><br><br>
             위 내용을 모두 숙지하였으며, 본인의 역할에 따른 책임과 의무를 다할 것을 서약합니다.<br>
-            동의하실 경우, 우측 하단의 패널에서 전자 서명을 진행하여 주십시오.<br><br>
-            <span style="color:#858796; font-size:13px;">"본 서명은 전자서명법에 의거하여 법적 효력을 가지며, 동의 시점의 [접속 IP, 타임스탬프, 스페이스 데이터 원본 해시(SHA-256)값]이 위변조 방지를 위해 서버에 영구 기록됩니다."</span>
+            동의하실 경우, 우측 하단의 패널에서 전자 서명을 진행하여 주십시오.
         </div>
     </div>
 
     <div class="signature-section">
+        <div class="approval-header">결 재 란</div>
+
         <div class="sign-box" id="box_ASSIGNOR">
-            <div class="sign-title">전임자 (인계)</div>
+            <div class="sign-title">전임자<br>(인계)</div>
             <div class="sign-content">
                 <div class="status-text">대기 중</div>
                 <div class="action-buttons">
                     <button class="btn-reject" onclick="rejectSignature()">반려</button>
                     <button class="btn-sign" onclick="openSignModal()">서명</button>
                 </div>
-                <div class="status-stamp">승인필</div>
+                <div class="status-stamp">서명</div>
+                <div class="sign-time"></div>
             </div>
         </div>
+
         <div class="sign-box" id="box_ASSIGNEE">
-            <div class="sign-title">후임자 (인수)</div>
+            <div class="sign-title">후임자<br>(인수)</div>
             <div class="sign-content">
                 <div class="status-text">대기 중</div>
                 <div class="action-buttons">
                     <button class="btn-reject" onclick="rejectSignature()">반려</button>
                     <button class="btn-sign" onclick="openSignModal()">서명</button>
                 </div>
-                <div class="status-stamp">승인필</div>
+                <div class="status-stamp">서명</div>
+                <div class="sign-time"></div>
             </div>
         </div>
+
         <div class="sign-box" id="box_ADMIN">
-            <div class="sign-title">그룹 관리자</div>
+            <div class="sign-title">관리자<br>(승인)</div>
             <div class="sign-content">
                 <div class="status-text">대기 중</div>
                 <div class="action-buttons">
                     <button class="btn-reject" onclick="rejectSignature()">반려</button>
                     <button class="btn-sign" onclick="openSignModal()">서명</button>
                 </div>
-                <div class="status-stamp">승인필</div>
+                <div class="status-stamp">승인</div>
+                <div class="sign-time"></div>
             </div>
         </div>
     </div>
@@ -183,14 +242,14 @@
 
 <div class="modal-overlay" id="signModal">
     <div class="modal-content">
-        <h2 style="margin-top: 0;">전자 서명 진행</h2>
-        <p style="color: #5a5c69;">서명을 완료하려면 아래 문구를 띄어쓰기까지 정확히 입력해주세요.</p>
+        <h3 style="margin-top: 0;">전자 서명 진행</h3>
+        <p style="color: #666; font-size: 14px;">서명을 완료하려면 아래 문구를 정확히 입력해주세요.</p>
         <div class="target-sentence">본인은 위 인수인계 조항을 모두 이해하였으며, 이에 동의합니다.</div>
         <input type="text" id="signatureInput" class="sign-input" placeholder="여기에 문구를 입력하세요" autocomplete="off">
 
         <div class="modal-btns">
             <button class="btn-cancel" onclick="closeSignModal()">취소</button>
-            <button class="btn-submit" id="btnSubmitSign" disabled onclick="submitSignature()">서명 제출 완료</button>
+            <button class="btn-submit" id="btnSubmitSign" disabled onclick="submitSignature()">전자 서명 완료</button>
         </div>
     </div>
 </div>
@@ -200,7 +259,7 @@
     const approvalId = pathParts[pathParts.length - 1];
 
     let myUserId = null;
-    let currentSpaceId = null; // 반려 완료 후 스페이스로 돌아가기 위해 저장
+    let currentSpaceId = null;
 
     $(document).ready(function(){
         let accessToken = localStorage.getItem("accessToken");
@@ -217,7 +276,6 @@
             return;
         }
 
-        // 백엔드에서 내 정보(userId) 획득
         $.ajax({
             url: '/api/user',
             method: 'GET',
@@ -231,17 +289,40 @@
         });
     });
 
+    // 🌟 서버에서 내려온 LocalDateTime 배열 또는 문자열을 깔끔한 날짜 포맷으로 변환하는 함수
+    function formatDateTime(timeData) {
+        if (!timeData) return "";
+        let dateObj;
+
+        // 배열로 넘어오는 경우 (Spring Boot의 기본 LocalDateTime JSON 직렬화)
+        if (Array.isArray(timeData)) {
+            dateObj = new Date(timeData[0], timeData[1] - 1, timeData[2], timeData[3], timeData[4], timeData[5] || 0);
+        } else {
+            // 문자열로 넘어오는 경우
+            dateObj = new Date(timeData);
+        }
+
+        const yyyy = dateObj.getFullYear();
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        const hh = String(dateObj.getHours()).padStart(2, '0');
+        const min = String(dateObj.getMinutes()).padStart(2, '0');
+
+        return `${yyyy}.${mm}.${dd} ${hh}:${min}`;
+    }
+
     // 1. 데이터 로드
     function loadApprovalData() {
         $.ajax({
             url: `/api/approval?id=${approvalId}`,
             method: 'GET',
             success: function(data) {
-                currentSpaceId = data.spaceId; // 라우팅을 위해 저장
+                currentSpaceId = data.spaceId;
 
-                renderSignatureBox('ASSIGNOR', data.stepStatus, data.assignorId);
-                renderSignatureBox('ASSIGNEE', data.stepStatus, data.assigneeId);
-                renderSignatureBox('ADMIN', data.stepStatus, data.adminId);
+                // 🌟 백엔드에서 받은 각 역할의 서명 시간을 파라미터로 함께 넘겨줍니다.
+                renderSignatureBox('ASSIGNOR', data.stepStatus, data.assignorId, data.assignorSignedAt);
+                renderSignatureBox('ASSIGNEE', data.stepStatus, data.assigneeId, data.assigneeSignedAt);
+                renderSignatureBox('ADMIN', data.stepStatus, data.adminId, data.adminSignedAt);
             },
             error: function() {
                 alert("결재 정보를 불러오는데 실패했습니다.");
@@ -250,7 +331,7 @@
     }
 
     // 2. 권한 및 UI 렌더링
-    function renderSignatureBox(roleType, currentStatus, targetUserId) {
+    function renderSignatureBox(roleType, currentStatus, targetUserId, signedAt) {
         let box = $(`#box_${roleType}`);
         let isSigned = false;
         let isCurrentTurn = false;
@@ -269,21 +350,28 @@
         let safeTargetId = targetUserId ? Number(targetUserId) : null;
         let isMyRole = (myUserId === safeTargetId);
 
-        box.find('.status-text, .action-buttons, .status-stamp').hide();
+        // UI 초기화
+        box.find('.status-text, .action-buttons, .status-stamp, .sign-time').hide();
         box.removeClass('my-turn-active');
 
         if(isSigned) {
-            box.find('.status-stamp').show();
+            // 🌟 서명 완료 시: 도장 마크와 서명 일시 노출
+            box.find('.status-stamp').css('display', 'flex');
+
+            if (signedAt) {
+                box.find('.sign-time').text(formatDateTime(signedAt)).show();
+            }
+
         } else if(isCurrentTurn) {
             if(isMyRole) {
-                // 🌟 내 차례일 때: 반려와 서명 버튼을 동시에 노출
+                // 내 차례일 때: 액션 버튼 노출 및 강조 애니메이션
                 box.find('.action-buttons').css('display', 'flex');
                 box.addClass('my-turn-active');
             } else {
                 box.find('.status-text').show().text("서명 진행 중");
             }
         } else {
-            box.find('.status-text').show().text("대기 중");
+            box.find('.status-text').show().text(""); // 대기 중일 때는 그냥 빈 칸으로 두어 깔끔하게 처리
         }
     }
 
@@ -327,7 +415,7 @@
         });
     }
 
-    // 🌟 5. 단순 반려(취소) 전송
+    // 5. 단순 반려(취소) 전송
     function rejectSignature() {
         if(!confirm("정말 인수인계를 반려(취소)하시겠습니까?\n모든 서명이 초기화되며 스페이스는 수정 가능한 상태로 돌아갑니다.")) return;
 
