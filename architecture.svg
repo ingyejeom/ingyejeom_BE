@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400">
+  <!-- Background -->
+  <rect width="800" height="400" fill="#f8f9fa"/>
+  <!-- Client -->
+  <rect x="50" y="150" width="120" height="60" rx="10" fill="#4dabf7"/>
+  <text x="110" y="185" fill="white" font-family="Arial" font-size="16" text-anchor="middle">Client (Web/App)</text>
+  <!-- Backend -->
+  <rect x="300" y="120" width="200" height="120" rx="10" fill="#69db7c"/>
+  <text x="400" y="170" fill="white" font-family="Arial" font-size="20" font-weight="bold" text-anchor="middle">Spring Boot API</text>
+  <text x="400" y="200" fill="white" font-family="Arial" font-size="14" text-anchor="middle">(인계점 Backend)</text>
+  <!-- DB -->
+  <path d="M 600 80 C 600 60, 700 60, 700 80 L 700 140 C 700 160, 600 160, 600 140 Z" fill="#ffa94d"/>
+  <path d="M 600 80 C 600 100, 700 100, 700 80" fill="none" stroke="#e8590c" stroke-width="2"/>
+  <text x="650" y="120" fill="white" font-family="Arial" font-size="16" text-anchor="middle">MySQL DB</text>
+  <!-- S3 -->
+  <path d="M 600 180 C 600 160, 700 160, 700 180 L 700 240 C 700 260, 600 260, 600 240 Z" fill="#ff6b6b"/>
+  <path d="M 600 180 C 600 200, 700 200, 700 180" fill="none" stroke="#c92a2a" stroke-width="2"/>
+  <text x="650" y="220" fill="white" font-family="Arial" font-size="16" text-anchor="middle">AWS S3</text>
+  <!-- Chatbot -->
+  <rect x="600" y="280" width="100" height="60" rx="10" fill="#ffd43b"/>
+  <text x="650" y="315" fill="#343a40" font-family="Arial" font-size="14" text-anchor="middle">Python RAG</text>
+
+  <!-- Arrows -->
+  <!-- Client to Backend -->
+  <path d="M 170 180 L 290 180" stroke="#495057" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M 290 180 L 170 180" stroke="#495057" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="230" y="170" fill="#495057" font-family="Arial" font-size="12" text-anchor="middle">REST API</text>
+
+  <!-- Backend to DB -->
+  <path d="M 500 150 L 590 110" stroke="#495057" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M 590 110 L 500 150" stroke="#495057" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="545" y="120" fill="#495057" font-family="Arial" font-size="12" text-anchor="middle">JPA/MyBatis</text>
+
+  <!-- Backend to S3 -->
+  <path d="M 500 180 L 590 210" stroke="#495057" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M 590 210 L 500 180" stroke="#495057" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- Backend to Chatbot -->
+  <path d="M 450 240 L 600 310" stroke="#495057" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M 600 310 L 450 240" stroke="#495057" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="525" y="290" fill="#495057" font-family="Arial" font-size="12" text-anchor="middle">HTTP Client</text>
+
+  <!-- Arrowhead Marker -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#495057" />
+    </marker>
+  </defs>
+</svg>
