@@ -35,6 +35,13 @@
                  AND admin_us.role = 'USER'
                  AND admin_us.status = 'ACTIVE'
                LIMIT 1) as userName
+
+            , (SELECT id
+                 FROM approval
+                WHERE space_id = user_space.space_id
+                AND step_status != 'COMPLETED'
+                AND deleted = false
+               LIMIT 1) as ongoingApprovalId
         FROM user_space
         LEFT JOIN space ON user_space.space_id = space.id
         LEFT JOIN tb_group ON space.group_id = tb_group.id

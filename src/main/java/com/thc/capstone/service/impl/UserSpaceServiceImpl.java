@@ -4,6 +4,8 @@ import com.thc.capstone.domain.*;
 import com.thc.capstone.dto.ApprovalDto;
 import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.UserSpaceDto;
+import com.thc.capstone.exception.HandoverInProgressException;
+import com.thc.capstone.mapper.ApprovalMapper;
 import com.thc.capstone.mapper.UserSpaceMapper;
 import com.thc.capstone.repository.SpaceRepository;
 import com.thc.capstone.repository.UserRepository;
@@ -27,6 +29,7 @@ public class UserSpaceServiceImpl implements UserSpaceService {
     final UserSpaceRepository userSpaceRepository;
     final UserSpaceMapper userSpaceMapper;
     final UserRepository userRepository;
+
 
 /*
     // 스페이스 참여

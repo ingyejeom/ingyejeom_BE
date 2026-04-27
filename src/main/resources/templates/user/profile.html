@@ -116,7 +116,7 @@
         $('#admin_group_area').scroll(function() {
             let $this = $(this);
             // 내부 스크롤이 바닥에 닿기 50px 전인지 계산
-            if ($this.scrollTop() + $this.innerHeight() >= this.scrollHeight - 50) {
+            if ($this.scrollTop() + $this.innerHeight() >= this.scrollHeight - 30) {
                 if (hasMoreAdmin && !isAdminFetching) {
                     loadAdminGroups();
                 }
@@ -126,7 +126,7 @@
         // [추가] 2. 사용자 업무 영역 스크롤 이벤트 분리
         $('#user_space_area').scroll(function() {
             let $this = $(this);
-            if ($this.scrollTop() + $this.innerHeight() >= this.scrollHeight - 50) {
+            if ($this.scrollTop() + $this.innerHeight() >= this.scrollHeight - 30) {
                 if (hasMoreUser && !isUserFetching) {
                     loadUserSpaces();
                 }
