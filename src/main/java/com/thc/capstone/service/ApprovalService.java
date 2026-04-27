@@ -9,6 +9,13 @@ import java.util.List;
 @Service
 public interface ApprovalService {
     /**
+     * 인계 시작
+     * @param param 초대에 필요한 데이터 (이메일, 스페이스 ID)
+     * @param reqUserId 요청한 사용자 ID
+     */
+    void startHandover(ApprovalDto.InviteReqDto param, Long reqUserId);
+
+    /**
      * 서명 테이블 생성
      * @param param 서명 테이블 데이터 (서명 테이블 ID)
      * @param reqUserId 요청한 사용자 ID

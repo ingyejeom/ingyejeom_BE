@@ -18,13 +18,6 @@ public interface UserSpaceService {
     */
 
     /**
-     * 스페이스 초대
-     * @param param 초대에 필요한 데이터 (이메일, 스페이스 ID)
-     * @param reqUserId 요청한 사용자 ID
-     */
-    void invite(UserSpaceDto.InviteReqDto param, Long reqUserId);
-
-    /**
      * 유저-스페이스 관계 생성
      * @param param 관계 생성에 필요한 데이터 (역할, 상태, 유저 ID, 스페이스 ID)
      * @return DB에 저장된 유저-스페이스의 고유 ID

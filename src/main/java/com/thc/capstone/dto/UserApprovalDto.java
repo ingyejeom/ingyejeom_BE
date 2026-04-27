@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDateTime;
+
 public class UserApprovalDto {
     /**
      * REQUEST
@@ -28,11 +30,9 @@ public class UserApprovalDto {
      * REQUEST
      * 유저-서명 수정 데이터
      */
-    @Getter @Setter @NoArgsConstructor @SuperBuilder
-    // @AllArgsConstructor
-    // 필요한 필드가 없으므로 일단 주석
+    @Getter @Setter @NoArgsConstructor @SuperBuilder @AllArgsConstructor
     public static class UpdateReqDto extends DefaultDto.UpdateReqDto {
-
+        LocalDateTime signedAt;
     }
 
     /**
@@ -44,6 +44,7 @@ public class UserApprovalDto {
         ApprovalRole approvalRole;
         Long userId;
         Long approvalId;
+        LocalDateTime signedAt;
     }
 
     /**

@@ -8,6 +8,9 @@ import jakarta.persistence.Enumerated;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
+@Setter
 @Getter
 @Entity
 public class UserApproval extends AuditingFields {
@@ -17,21 +20,23 @@ public class UserApproval extends AuditingFields {
      * - ASSIGNEE : 인수자
      * - ADMIN : 관리자
      */
-    @Setter
     @Enumerated(EnumType.STRING)
     ApprovalRole approvalRole;
 
     /**
      * 해당 유저 ID (FK)
      */
-    @Setter
     Long userId;
     
     /**
      * 해당 유저-서명 ID (FK)
      */
-    @Setter
     Long approvalId;
+
+    /**
+     * 서명 시간
+     */
+    LocalDateTime signedAt;
 
     protected UserApproval() {}
     private UserApproval(ApprovalRole approvalRole, Long userId, Long approvalId) {
@@ -51,6 +56,9 @@ public class UserApproval extends AuditingFields {
     public void update(UserApprovalDto.UpdateReqDto param){
         if(param.getDeleted() != null){
             setDeleted(param.getDeleted());
+        }
+        if(param.getSignedAt() != null){
+            setSignedAt(param.getSignedAt());
         }
     }
 

@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,10 +27,26 @@ public class ApprovalServiceImpl implements ApprovalService {
     final ApprovalRepository approvalRepository;
     final ApprovalMapper approvalMapper;
     final UserSpaceRepository userSpaceRepository;
+    final UserRepository userRepository;
     final UserSpaceService userSpaceService;
     final UserApprovalService userApprovalService;
+    final UserApprovalRepository userApprovalRepository;
 
     String target = "approval";
+
+    @Override
+    @Transactional
+    public void startHandover(ApprovalDto.InviteReqDto param, Long reqUserId) {
+        User assigneeUser = userRepository.findByEmail(param.getEmail())
+                .orElseThrow(() -> new RuntimeException("해당 이메일을 가진 유저가 없습니다."));
+
+        ApprovalDto.CreateReqDto approvalParam = ApprovalDto.CreateReqDto.builder()
+                .spaceId(param.getSpaceId())
+                .assigneeId(assigneeUser.getId())
+                .build();
+
+        create(approvalParam, reqUserId);
+    }
 
     @Override
     @Transactional
@@ -62,6 +79,7 @@ public class ApprovalServiceImpl implements ApprovalService {
             userSpaceService.update(UserSpaceDto.UpdateReqDto.builder()
                     .id(assigneeUserSpace.getId())
                     .status(UserSpaceStatus.PENDING)
+                    .deleted(false)
                     .build());
         } else {
             // 처음 스페이스에 들어오는 것이라면 PENDING 상태로 새로 생성
@@ -113,6 +131,15 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (!hasPermission) {
             throw new RuntimeException("현재 차례에 서명할 권한이 없습니다.");
         }
+
+        UserApproval currentUserApproval = userApprovalRepository
+                .findByApprovalIdAndApprovalRole(approval.getId(), requiredRole)
+                        .orElseThrow(() -> new RuntimeException("해당 서명자 정보를 찾을 수 없습니다"));
+
+        userApprovalService.update(UserApprovalDto.UpdateReqDto.builder()
+                .id(currentUserApproval.getId())
+                .signedAt(LocalDateTime.now())
+                .build(), reqUserId);
 
         // 4. 상태 전이 및 인계 완료 처리
         progressToNextStep(approval, reqUserId);
