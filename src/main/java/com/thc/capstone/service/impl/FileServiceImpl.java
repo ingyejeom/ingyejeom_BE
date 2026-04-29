@@ -11,6 +11,8 @@ import com.thc.capstone.repository.UserSpaceRepository;
 import com.thc.capstone.service.ChatbotService;
 import com.thc.capstone.service.FileService;
 import com.thc.capstone.service.S3Service;
+import com.thc.capstone.exception.HandoverInProgressException;
+import com.thc.capstone.mapper.ApprovalMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,12 +38,17 @@ public class FileServiceImpl implements FileService {
     private final FileRepository fileRepository;
     private final FolderRepository folderRepository;
     private final FileMapper fileMapper;
+    private final ApprovalMapper approvalMapper;
 
     private final UserSpaceRepository userSpaceRepository;
 
     @Override
     @Transactional
     public void upload(FileDto.UploadReqDto param, Long reqUserId) {
+        if (approvalMapper.isHandoverInProgress(param.getSpaceId())) {
+            throw new HandoverInProgressException("현재 인수인계가 진행 중이므로 스페이스 내 파일을 업로드할 수 없습니다.");
+        }
+
         // 스페이스에 파일을 올릴 권한이 있는지 확인 (ACTIVE 한 사람)
         UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(reqUserId, param.getSpaceId(), UserSpaceStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException("해당 스페이스에 대한 권한이 없습니다"));
@@ -93,6 +100,10 @@ public class FileServiceImpl implements FileService {
     @Override
     @Transactional
     public void uploadOnly(FileDto.UploadReqDto param, Long reqUserId) { // 챗봇 ingest 호출 없는 S3와 DB에만 저장하는 메서드
+        if (approvalMapper.isHandoverInProgress(param.getSpaceId())) {
+            throw new HandoverInProgressException("현재 인수인계가 진행 중이므로 스페이스 내 파일을 업로드할 수 없습니다.");
+        }
+
         // 스페이스에 파일을 올릴 권한이 있는지 확인 (ACTIVE 한 사람)
         UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(reqUserId, param.getSpaceId(), UserSpaceStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException("해당 스페이스에 대한 권한이 없습니다"));
@@ -138,6 +149,15 @@ public class FileServiceImpl implements FileService {
         File file = fileRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 파일입니다"));
 
+        // 파일이 속한 스페이스 정보를 찾기 위해 UserSpace 조회
+        UserSpace userSpace = userSpaceRepository.findById(file.getUserSpaceId())
+                .orElseThrow(() -> new RuntimeException("사용자 스페이스 정보가 없습니다."));
+
+        // 해당 스페이스가 인수인계 중인지 검증
+        if (approvalMapper.isHandoverInProgress(userSpace.getSpaceId())) {
+            throw new HandoverInProgressException("현재 인수인계가 진행 중이므로 파일 이름을 변경할 수 없습니다.");
+        }
+
         file.update(param);
         fileRepository.save(file);
     }
@@ -145,6 +165,10 @@ public class FileServiceImpl implements FileService {
     @Override
     @Transactional
     public void createFolder(FileDto.CreateFolderReqDto param, Long reqUserId) {
+        if (approvalMapper.isHandoverInProgress(param.getSpaceId())) {
+            throw new HandoverInProgressException("현재 인수인계가 진행 중이므로 스페이스 내 폴더를 생성할 수 없습니다.");
+        }
+
         // 권한 체크 (업로드와 동일)
         userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(reqUserId, param.getSpaceId(), UserSpaceStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException("권한이 없습니다"));
@@ -177,6 +201,13 @@ public class FileServiceImpl implements FileService {
         File file = fileRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("파일이 존재하지 않음"));
 
+        UserSpace userSpace = userSpaceRepository.findById(file.getUserSpaceId())
+                .orElseThrow(() -> new RuntimeException("사용자 스페이스 정보가 없습니다."));
+
+        if (approvalMapper.isHandoverInProgress(userSpace.getSpaceId())) {
+            throw new HandoverInProgressException("현재 인수인계가 진행 중이므로 파일을 삭제할 수 없습니다.");
+        }
+
         // S3에서도 파일 삭제
         // s3Service.delete(file.getStoreFileName());
 
@@ -193,6 +224,10 @@ public class FileServiceImpl implements FileService {
         // 폴더 존재여부 검증
         Folder folder = folderRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("데이터가 없습니다"));
+
+        if (approvalMapper.isHandoverInProgress(folder.getSpaceId())) {
+            throw new HandoverInProgressException("현재 인수인계가 진행 중이므로 폴더를 변경하거나 삭제할 수 없습니다.");
+        }
 
         // 변경된 파일 정보 적용 및 DB 저장
         folder.update(param);
@@ -250,12 +285,24 @@ public class FileServiceImpl implements FileService {
         if ("FILE".equals(param.getType())) {
             File file = fileRepository.findById(param.getId())
                     .orElseThrow(() -> new RuntimeException("파일이 없습니다."));
+
+            UserSpace userSpace = userSpaceRepository.findById(file.getUserSpaceId())
+                    .orElseThrow(() -> new RuntimeException("사용자 스페이스 정보가 없습니다."));
+
+            if (approvalMapper.isHandoverInProgress(userSpace.getSpaceId())) {
+                throw new HandoverInProgressException("현재 인수인계가 진행 중이므로 파일을 이동할 수 없습니다.");
+            }
+
             // 소속 폴더 ID만 바꿔줌
             file.setFolderId(param.getTargetFolderId());
 
         } else if ("FOLDER".equals(param.getType())) {
             Folder folder = folderRepository.findById(param.getId())
                     .orElseThrow(() -> new RuntimeException("폴더가 없습니다."));
+
+            if (approvalMapper.isHandoverInProgress(folder.getSpaceId())) {
+                throw new HandoverInProgressException("현재 인수인계가 진행 중이므로 폴더를 이동할 수 없습니다.");
+            }
 
             // 자기 자신이나 자신의 하위 폴더로 이동하는 것은 막아야 함 (무한 루프 방지)
             if (param.getId().equals(param.getTargetFolderId())) {
