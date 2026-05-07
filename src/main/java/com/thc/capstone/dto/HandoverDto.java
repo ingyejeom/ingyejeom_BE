@@ -8,6 +8,8 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
+
 /**
  * 인수인계 문서 데이터 전송 객체 모음
  *
@@ -96,7 +98,32 @@ public class HandoverDto {
         private String workName;
         private Long groupId;
         private String groupName;
+        private Long userId;
         private String userName;
+        private String userSpaceStatus;
+        private LocalDateTime pdfGeneratedAt;
+        private Long pdfGeneratedBy;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @SuperBuilder
+    public static class PolicyResDto {
+        private Long handoverId;
+        private Long spaceId;
+        private Long ownerUserId;
+        private String ownerUserSpaceStatus;
+        private Long activeApprovalId;
+        private String activeApprovalStepStatus;
+        private Long assignorId;
+        private Long assigneeId;
+        private LocalDateTime pdfGeneratedAt;
+        private Long pdfGeneratedBy;
+        private Boolean canEdit;
+        private Boolean canGeneratePdf;
+        private String lockReason;
     }
 
     /**
@@ -120,6 +147,7 @@ public class HandoverDto {
     public static class SaveReqDto {
         private MultipartFile pdfFile;
         private MultipartFile mdFile;
+        private Long handoverId;
         private Long spaceId;
         private Long folderId;
     }
