@@ -61,6 +61,9 @@ dependencies {
 
     // AWS S3 연동을 위한 스타터
     implementation 'io.awspring.cloud:spring-cloud-starter-aws:2.4.4'
+    // JODConverter for Office to PDF conversion
+    implementation 'org.jodconverter:jodconverter-local:4.4.7'
+    implementation 'org.jodconverter:jodconverter-spring-boot-starter:4.4.7'
 }
 
 tasks.named('test') {
