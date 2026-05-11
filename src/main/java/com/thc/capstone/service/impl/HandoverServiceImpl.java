@@ -1,21 +1,31 @@
 package com.thc.capstone.service.impl;
 
+import com.thc.capstone.domain.Folder;
 import com.thc.capstone.domain.Handover;
 import com.thc.capstone.domain.UserSpace;
 import com.thc.capstone.domain.UserSpaceStatus;
+import com.thc.capstone.dto.ChatbotDto;
 import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.HandoverDto;
 import com.thc.capstone.mapper.HandoverMapper;
+import com.thc.capstone.repository.FileRepository;
+import com.thc.capstone.repository.FolderRepository;
 import com.thc.capstone.repository.HandoverRepository;
 import com.thc.capstone.repository.UserSpaceRepository;
+import com.thc.capstone.service.ChatbotService;
 import com.thc.capstone.service.HandoverService;
+import com.thc.capstone.service.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 인수인계 문서 비즈니스 로직 구현체
@@ -31,6 +41,10 @@ public class HandoverServiceImpl implements HandoverService {
     private final HandoverRepository handoverRepository;
     private final UserSpaceRepository userSpaceRepository;
     private final HandoverMapper handoverMapper;
+    private final FileRepository fileRepository;
+    private final FolderRepository folderRepository;
+    private final S3Service s3Service;
+    private final ChatbotService chatbotService;
 
     @Override
     @Transactional
@@ -42,6 +56,9 @@ public class HandoverServiceImpl implements HandoverService {
                     .orElseThrow(() -> new RuntimeException("존재하지 않는 UserSpace입니다."));
 
             validateOwnership(userSpace, reqUserId);
+            validateActiveStatus(userSpace);
+            validateSpaceCanAcceptDraft(userSpace.getSpaceId(), reqUserId);
+            validateNoExistingHandover(userSpace.getId());
 
             String title = resolveTitle(param.getTitle(), param.getRole());
             String text = resolveText(param.getText(), title, param.getRole());
@@ -68,9 +85,13 @@ public class HandoverServiceImpl implements HandoverService {
         validateLogin(reqUserId);
 
         try {
-            // userId + spaceId로 UserSpace를 찾는다 (status 무관)
-            UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceId(reqUserId, param.getSpaceId())
-                    .orElseThrow(() -> new RuntimeException("해당 스페이스에 대한 접근 권한이 없습니다."));
+            // userId + spaceId로 ACTIVE 상태의 UserSpace를 찾는다
+            UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(
+                    reqUserId, param.getSpaceId(), UserSpaceStatus.ACTIVE)
+                    .orElseThrow(() -> new RuntimeException("해당 스페이스의 활성 담당자만 인수인계 문서를 생성할 수 있습니다."));
+
+            validateSpaceCanAcceptDraft(param.getSpaceId(), reqUserId);
+            validateNoExistingHandover(userSpace.getId());
 
             String title = resolveTitle(param.getTitle(), param.getRole());
             String text = resolveText(param.getText(), title, param.getRole());
@@ -93,6 +114,7 @@ public class HandoverServiceImpl implements HandoverService {
         Handover handover = handoverRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 인수인계 문서입니다."));
 
+        validateCanEdit(handover.getId(), reqUserId);
         checkPermission(handover.getUserSpaceId(), reqUserId);
 
         handover.update(param);
@@ -135,6 +157,7 @@ public class HandoverServiceImpl implements HandoverService {
         Handover handover = handoverRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 인수인계 문서입니다."));
 
+        validateCanEdit(handover.getId(), reqUserId);
         checkPermission(handover.getUserSpaceId(), reqUserId);
 
         handover.setText(text);
@@ -149,6 +172,7 @@ public class HandoverServiceImpl implements HandoverService {
         Handover handover = handoverRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 인수인계 문서입니다."));
 
+        validateCanEdit(handover.getId(), reqUserId);
         checkPermission(handover.getUserSpaceId(), reqUserId);
 
         handover.setFolderId(param.getTargetFolderId());
@@ -167,6 +191,77 @@ public class HandoverServiceImpl implements HandoverService {
         validateOwnership(userSpace, reqUserId);
 
         return handoverMapper.findByUserSpaceId(userSpaceId);
+    }
+
+    @Override
+    public HandoverDto.PolicyResDto policy(Long handoverId, Long spaceId, Long reqUserId) {
+        validateLogin(reqUserId);
+
+        HandoverDto.PolicyResDto policy = null;
+        if (handoverId != null) {
+            policy = handoverMapper.policyByHandoverId(handoverId);
+        } else if (spaceId != null) {
+            policy = handoverMapper.policyBySpaceId(spaceId);
+            if (policy == null) {
+                policy = HandoverDto.PolicyResDto.builder()
+                        .spaceId(spaceId)
+                        .build();
+            }
+        }
+
+        if (policy == null) {
+            throw new RuntimeException("인수인계 정책 정보를 찾을 수 없습니다.");
+        }
+
+        applyPolicyFlags(policy, reqUserId);
+        return policy;
+    }
+
+    @Override
+    @Transactional
+    public void saveGeneratedPdf(HandoverDto.SaveReqDto param, Long reqUserId) throws IOException {
+        validateLogin(reqUserId);
+        if (param.getHandoverId() == null) {
+            throw new RuntimeException("인수인계 문서 ID가 필요합니다.");
+        }
+        if (param.getSpaceId() == null) {
+            throw new RuntimeException("스페이스 ID가 필요합니다.");
+        }
+        if (param.getPdfFile() == null || param.getPdfFile().isEmpty()) {
+            throw new RuntimeException("생성할 PDF 파일이 없습니다.");
+        }
+
+        Handover handover = handoverRepository.findWithLockById(param.getHandoverId())
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 인수인계 문서입니다."));
+
+        HandoverDto.PolicyResDto policy = policy(handover.getId(), param.getSpaceId(), reqUserId);
+        if (policy.getSpaceId() != null && !policy.getSpaceId().equals(param.getSpaceId())) {
+            throw new RuntimeException("인수인계 문서와 스페이스 정보가 일치하지 않습니다.");
+        }
+        if (!Boolean.TRUE.equals(policy.getCanGeneratePdf())) {
+            throw new RuntimeException(policy.getLockReason() != null ? policy.getLockReason() : "PDF를 생성할 수 없는 상태입니다.");
+        }
+
+        UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceId(reqUserId, param.getSpaceId())
+                .orElseThrow(() -> new RuntimeException("해당 스페이스에 대한 접근 권한이 없습니다."));
+
+        Long folderId = resolveHandoverFolderId(param.getSpaceId(), param.getFolderId());
+        savePdfOnly(param.getPdfFile(), userSpace.getId(), folderId);
+
+        if (param.getMdFile() != null && !param.getMdFile().isEmpty()) {
+            ChatbotDto.IngestReqDto ingestReqDto = ChatbotDto.IngestReqDto.builder()
+                    .spaceId(param.getSpaceId())
+                    .fileBytes(param.getMdFile().getBytes())
+                    .fileName(param.getMdFile().getOriginalFilename())
+                    .build();
+            chatbotService.ingestRequest(ingestReqDto, reqUserId);
+        }
+
+        handover.setPdfGeneratedAt(LocalDateTime.now());
+        handover.setPdfGeneratedBy(reqUserId);
+        handoverRepository.save(handover);
+
+        log.info("인수인계 PDF 생성 기록 완료 - handoverId: {}, userId: {}", handover.getId(), reqUserId);
     }
 
     // ========================================
@@ -192,6 +287,26 @@ public class HandoverServiceImpl implements HandoverService {
     }
 
     /**
+     * UserSpace가 ACTIVE 상태인지 검증한다.
+     * 활성 담당자만 인수인계 문서를 생성할 수 있다.
+     */
+    private void validateActiveStatus(UserSpace userSpace) {
+        if (userSpace.getStatus() != UserSpaceStatus.ACTIVE) {
+            throw new RuntimeException("해당 스페이스의 활성 담당자만 인수인계 문서를 생성할 수 있습니다.");
+        }
+    }
+
+    /**
+     * 해당 UserSpace에 이미 인수인계 문서가 존재하는지 검증한다.
+     * 1인 1문서 정책: 각 사용자는 스페이스당 하나의 인수인계 문서만 생성할 수 있다.
+     */
+    private void validateNoExistingHandover(Long userSpaceId) {
+        if (handoverRepository.existsByUserSpaceIdAndDeletedFalse(userSpaceId)) {
+            throw new RuntimeException("이미 해당 스페이스에 인수인계 문서가 존재합니다. 기존 문서를 삭제하거나 수정해주세요.");
+        }
+    }
+
+    /**
      * 문서 수정/삭제 권한을 검증한다.
      * UserSpace 소유자만 해당 문서를 수정할 수 있다.
      */
@@ -202,6 +317,94 @@ public class HandoverServiceImpl implements HandoverService {
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 UserSpace입니다."));
 
         validateOwnership(userSpace, reqUserId);
+    }
+
+    private void validateCanEdit(Long handoverId, Long reqUserId) {
+        HandoverDto.PolicyResDto policy = policy(handoverId, null, reqUserId);
+        if (!Boolean.TRUE.equals(policy.getCanEdit())) {
+            throw new RuntimeException(policy.getLockReason() != null ? policy.getLockReason() : "잠긴 인수인계서는 수정할 수 없습니다.");
+        }
+    }
+
+    private void validateSpaceCanAcceptDraft(Long spaceId, Long reqUserId) {
+        HandoverDto.PolicyResDto policy = policy(null, spaceId, reqUserId);
+        String activeStep = policy.getActiveApprovalStepStatus();
+        if (activeStep != null && !"ASSIGNOR_TURN".equals(activeStep)) {
+            throw new RuntimeException("전임자 서명 완료 이후에는 인수인계서를 새로 작성할 수 없습니다.");
+        }
+    }
+
+    private void applyPolicyFlags(HandoverDto.PolicyResDto policy, Long reqUserId) {
+        String activeStep = policy.getActiveApprovalStepStatus();
+        boolean hasActiveApproval = activeStep != null;
+        boolean ownerIsInactive = "INACTIVE".equals(policy.getOwnerUserSpaceStatus());
+        boolean preSigned = "ASSIGNEE_TURN".equals(activeStep);
+        boolean completedLocked = "ADMIN_TURN".equals(activeStep) || ownerIsInactive;
+        boolean pdfAlreadyGenerated = policy.getPdfGeneratedAt() != null;
+        boolean isPdfActor = reqUserId.equals(policy.getAssignorId()) || reqUserId.equals(policy.getAssigneeId());
+
+        boolean canEdit = !ownerIsInactive && (!hasActiveApproval || "ASSIGNOR_TURN".equals(activeStep));
+        boolean canGeneratePdf = preSigned && isPdfActor && !pdfAlreadyGenerated;
+
+        policy.setCanEdit(canEdit);
+        policy.setCanGeneratePdf(canGeneratePdf);
+
+        if (pdfAlreadyGenerated) {
+            policy.setLockReason("PDF가 이미 생성되었습니다.");
+        } else if (canGeneratePdf) {
+            policy.setLockReason(null);
+        } else if (preSigned && !isPdfActor) {
+            policy.setLockReason("전임자 또는 인수자만 PDF를 생성할 수 있습니다.");
+        } else if (preSigned) {
+            policy.setLockReason("전임자 서명 완료 상태에서만 PDF를 생성할 수 있습니다.");
+        } else if (completedLocked || "COMPLETED".equals(activeStep)) {
+            policy.setLockReason("인수자 서명 완료 이후에는 인수인계서가 잠깁니다.");
+        } else if (hasActiveApproval) {
+            policy.setLockReason("전임자 서명 전까지만 수정할 수 있습니다.");
+        } else if (ownerIsInactive) {
+            policy.setLockReason("완료된 이전 담당자의 인수인계서는 수정할 수 없습니다.");
+        } else {
+            policy.setLockReason("전임자 서명 완료 상태에서만 PDF를 생성할 수 있습니다.");
+        }
+    }
+
+    private void savePdfOnly(MultipartFile multipartFile, Long userSpaceId, Long folderId) throws IOException {
+        String originalFilename = multipartFile.getOriginalFilename();
+        String storeFileName = createStoreFileName(originalFilename);
+        String fileUrl = s3Service.upload(multipartFile, storeFileName);
+
+        com.thc.capstone.domain.File file = com.thc.capstone.domain.File.of(
+                originalFilename,
+                storeFileName,
+                fileUrl,
+                multipartFile.getSize(),
+                userSpaceId,
+                folderId
+        );
+        fileRepository.save(file);
+    }
+
+    private Long resolveHandoverFolderId(Long spaceId, Long requestedFolderId) {
+        if (requestedFolderId != null) {
+            return requestedFolderId;
+        }
+
+        Long existingFolderId = handoverMapper.findHandoverFolderId(spaceId);
+        if (existingFolderId != null) {
+            return existingFolderId;
+        }
+
+        Folder folder = Folder.of("인수인계서", null, spaceId);
+        folderRepository.save(folder);
+        return folder.getId();
+    }
+
+    private String createStoreFileName(String originalFilename) {
+        String ext = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            ext = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        return UUID.randomUUID() + ext;
     }
 
     /**

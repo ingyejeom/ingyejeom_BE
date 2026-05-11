@@ -1,7 +1,11 @@
 package com.thc.capstone.repository;
 
 import com.thc.capstone.domain.Handover;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,4 +39,11 @@ public interface HandoverRepository extends JpaRepository<Handover, Long> {
 
     // 특정 UserSpace에서 특정 역할의 문서가 있는지 확인
     boolean existsByUserSpaceIdAndRole(Long userSpaceId, String role);
+
+    // 특정 UserSpace에 삭제되지 않은 인수인계 문서가 있는지 확인 (1인 1문서 정책)
+    boolean existsByUserSpaceIdAndDeletedFalse(Long userSpaceId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select h from Handover h where h.id = :id")
+    Optional<Handover> findWithLockById(@Param("id") Long id);
 }

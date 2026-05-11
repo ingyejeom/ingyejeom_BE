@@ -19,10 +19,14 @@
             h.text,
             h.user_space_id AS userSpaceId,
             h.folder_id AS folderId,
+            h.pdf_generated_at AS pdfGeneratedAt,
+            h.pdf_generated_by AS pdfGeneratedBy,
             us.space_id AS spaceId,
+            us.status AS userSpaceStatus,
             s.work_name AS workName,
             g.id AS groupId,
             g.group_name AS groupName,
+            us.user_id AS userId,
             u.name AS userName
         FROM handover h
         LEFT JOIN user_space us ON h.user_space_id = us.id
@@ -44,7 +48,11 @@
             h.role,
             h.user_space_id AS userSpaceId,
             h.folder_id AS folderId,
+            h.pdf_generated_at AS pdfGeneratedAt,
+            h.pdf_generated_by AS pdfGeneratedBy,
             h.created_at AS createdAt,
+            us.status AS userSpaceStatus,
+            us.user_id AS userId,
             u.name AS userName
         FROM handover h
         INNER JOIN user_space us ON h.user_space_id = us.id
@@ -66,7 +74,11 @@
             h.role,
             h.user_space_id AS userSpaceId,
             h.folder_id AS folderId,
+            h.pdf_generated_at AS pdfGeneratedAt,
+            h.pdf_generated_by AS pdfGeneratedBy,
             h.created_at AS createdAt,
+            us.status AS userSpaceStatus,
+            us.user_id AS userId,
             u.name AS userName
         FROM handover h
         INNER JOIN user_space us ON h.user_space_id = us.id
@@ -94,10 +106,14 @@
             h.text,
             h.user_space_id AS userSpaceId,
             h.folder_id AS folderId,
+            h.pdf_generated_at AS pdfGeneratedAt,
+            h.pdf_generated_by AS pdfGeneratedBy,
             us.space_id AS spaceId,
+            us.status AS userSpaceStatus,
             s.work_name AS workName,
             g.id AS groupId,
             g.group_name AS groupName,
+            us.user_id AS userId,
             u.name AS userName
         FROM handover h
         LEFT JOIN user_space us ON h.user_space_id = us.id
@@ -107,6 +123,66 @@
         WHERE h.user_space_id = #{userSpaceId}
           AND h.deleted = false
         ORDER BY h.created_at DESC
+        LIMIT 1
+    </select>
+
+    <select id="policyByHandoverId" parameterType="Long"
+            resultType="com.thc.capstone.dto.HandoverDto$PolicyResDto">
+        SELECT
+            h.id AS handoverId,
+            us.space_id AS spaceId,
+            us.user_id AS ownerUserId,
+            us.status AS ownerUserSpaceStatus,
+            h.pdf_generated_at AS pdfGeneratedAt,
+            h.pdf_generated_by AS pdfGeneratedBy,
+            ap.id AS activeApprovalId,
+            ap.step_status AS activeApprovalStepStatus,
+            MAX(CASE WHEN ua.approval_role = 'ASSIGNOR' THEN ua.user_id END) AS assignorId,
+            MAX(CASE WHEN ua.approval_role = 'ASSIGNEE' THEN ua.user_id END) AS assigneeId
+        FROM handover h
+        LEFT JOIN user_space us ON h.user_space_id = us.id
+        LEFT JOIN approval ap
+            ON ap.space_id = us.space_id
+           AND ap.deleted = false
+           AND ap.step_status != 'COMPLETED'
+        LEFT JOIN user_approval ua
+            ON ua.approval_id = ap.id
+           AND ua.deleted = false
+        WHERE h.id = #{handoverId}
+          AND h.deleted = false
+        GROUP BY h.id, us.space_id, us.user_id, us.status, h.pdf_generated_at, h.pdf_generated_by, ap.id, ap.step_status
+        ORDER BY ap.id DESC
+        LIMIT 1
+    </select>
+
+    <select id="policyBySpaceId" parameterType="Long"
+            resultType="com.thc.capstone.dto.HandoverDto$PolicyResDto">
+        SELECT
+            #{spaceId} AS spaceId,
+            ap.id AS activeApprovalId,
+            ap.step_status AS activeApprovalStepStatus,
+            MAX(CASE WHEN ua.approval_role = 'ASSIGNOR' THEN ua.user_id END) AS assignorId,
+            MAX(CASE WHEN ua.approval_role = 'ASSIGNEE' THEN ua.user_id END) AS assigneeId
+        FROM approval ap
+        LEFT JOIN user_approval ua
+            ON ua.approval_id = ap.id
+           AND ua.deleted = false
+        WHERE ap.space_id = #{spaceId}
+          AND ap.deleted = false
+          AND ap.step_status != 'COMPLETED'
+        GROUP BY ap.id, ap.step_status
+        ORDER BY ap.id DESC
+        LIMIT 1
+    </select>
+
+    <select id="findHandoverFolderId" parameterType="Long" resultType="java.lang.Long">
+        SELECT id
+        FROM folder
+        WHERE space_id = #{spaceId}
+          AND parent_id IS NULL
+          AND name = '인수인계서'
+          AND deleted = false
+        ORDER BY id DESC
         LIMIT 1
     </select>
 

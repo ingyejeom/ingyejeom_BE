@@ -4,6 +4,7 @@ import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.HandoverDto;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -71,4 +72,8 @@ public interface HandoverService {
      * 문서가 없으면 null을 반환한다.
      */
     HandoverDto.DetailResDto getByUserSpaceId(Long userSpaceId, Long reqUserId);
+
+    HandoverDto.PolicyResDto policy(Long handoverId, Long spaceId, Long reqUserId);
+
+    void saveGeneratedPdf(HandoverDto.SaveReqDto param, Long reqUserId) throws IOException;
 }

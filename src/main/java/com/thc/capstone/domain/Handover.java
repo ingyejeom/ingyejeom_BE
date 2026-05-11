@@ -8,6 +8,8 @@ import jakarta.persistence.Lob;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 /**
  * 인수인계 문서 엔티티
  *
@@ -41,6 +43,12 @@ public class Handover extends AuditingFields {
      */
     @Setter
     private Long folderId;
+
+    @Setter
+    private LocalDateTime pdfGeneratedAt;
+
+    @Setter
+    private Long pdfGeneratedBy;
 
     protected Handover() {}
 
