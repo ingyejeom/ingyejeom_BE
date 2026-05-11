@@ -34,4 +34,10 @@ public interface HandoverMapper {
      * 사용자가 스페이스 목록에서 인수인계 버튼 클릭 시 기존 문서 존재 여부 확인에 사용된다.
      */
     HandoverDto.DetailResDto findByUserSpaceId(Long userSpaceId);
+
+    HandoverDto.PolicyResDto policyByHandoverId(Long handoverId);
+
+    HandoverDto.PolicyResDto policyBySpaceId(Long spaceId);
+
+    Long findHandoverFolderId(Long spaceId);
 }

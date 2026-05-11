@@ -5,6 +5,7 @@ import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.ApprovalDto;
 import com.thc.capstone.dto.UserApprovalDto;
 import com.thc.capstone.dto.UserSpaceDto;
+import com.thc.capstone.exception.HandoverInProgressException;
 import com.thc.capstone.mapper.ApprovalMapper;
 import com.thc.capstone.repository.*;
 import com.thc.capstone.service.PermittedService;
@@ -55,6 +56,10 @@ public class ApprovalServiceImpl implements ApprovalService {
 
         Long spaceId = param.getSpaceId();
         Long assigneeId = param.getAssigneeId();
+
+        if (approvalMapper.isHandoverInProgress(spaceId)) {
+            throw new HandoverInProgressException("현재 진행 중인 인수인계가 있습니다. 기존 인수인계를 완료하거나 취소한 후 다시 시도해주세요.");
+        }
 
         Long assignorId = approvalMapper.findAssignorIdBySpaceId(spaceId);
         if (assignorId == null) {
@@ -117,6 +122,12 @@ public class ApprovalServiceImpl implements ApprovalService {
     public void sign(ApprovalDto.UpdateReqDto param, Long reqUserId){
         Approval approval = approvalRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 서명입니다"));
+
+        // deleted 는 Boolean 으로 선언되어있어 null 값이 가능
+            // NullPointerException(NPE)를 방지하기 위해 null 일 때도 false 를 반환하도록 함
+        if (approval.getDeleted()) {
+            throw new RuntimeException("이미 취소된 인계 절차입니다.");
+        }
 
         if (approval.getStepStatus() == StepStatus.COMPLETED) {
             throw new RuntimeException("이미 완료된 인계 절차입니다.");

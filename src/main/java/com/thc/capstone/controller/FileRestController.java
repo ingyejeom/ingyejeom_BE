@@ -8,6 +8,10 @@ import com.thc.capstone.service.ChatbotService;
 import com.thc.capstone.service.FileService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.jodconverter.core.DocumentConverter;
+import org.jodconverter.core.document.DefaultDocumentFormatRegistry;
+import org.jodconverter.core.office.OfficeException;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -28,6 +33,10 @@ import java.util.List;
 @RestController
 public class FileRestController {
     final FileService fileService;
+    
+    // JODConverter 빈을 주입받습니다. (jodconverter-spring-boot-starter 덕분에 자동 설정됨)
+    // 참고: 실행 환경(운영체제)에 LibreOffice 또는 OpenOffice가 설치되어 있어야 합니다.
+    final DocumentConverter documentConverter;
 
     // 요청한 사용자 ID 추출
     public Long getUserId(PrincipalDetails principalDetails) {
@@ -112,19 +121,58 @@ public class FileRestController {
         Resource resource = resourceDto.getResource();
 
         // 한글 파일명 깨짐 방지 인코딩
-        String encodedUploadFileName = UriUtils.encode(resourceDto.getOriginalFileName(), StandardCharsets.UTF_8);
+        String originalFileName = resourceDto.getOriginalFileName();
+        String encodedUploadFileName = UriUtils.encode(originalFileName, StandardCharsets.UTF_8);
 
         // 헤더 설정
         String contentDisposition = "attachment"; // 기본값: 다운로드
         if ("view".equals(mode)) {
             contentDisposition = "inline"; // 브라우저에서 열기 (이미지, PDF 등)
+            
+            // [Office 문서 변환 로직 추가]
+            // mode가 view이고, 오피스 문서인 경우 PDF로 변환하여 응답합니다.
+            String ext = "";
+            int dotIndex = originalFileName.lastIndexOf('.');
+            if (dotIndex > 0) {
+                ext = originalFileName.substring(dotIndex + 1).toLowerCase();
+            }
+            
+            if (ext.matches("ppt|pptx|xls|xlsx|doc|docx")) {
+                try {
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                    
+                    // S3에서 읽어온 InputStream을 PDF로 변환
+                    documentConverter
+                            .convert(resource.getInputStream())
+                            .as(DefaultDocumentFormatRegistry.getFormatByExtension(ext))
+                            .to(outputStream)
+                            .as(DefaultDocumentFormatRegistry.PDF)
+                            .execute();
+                            
+                    // 변환된 PDF 리소스로 교체
+                    resource = new ByteArrayResource(outputStream.toByteArray());
+                    
+                    // 파일명과 Content-Type을 PDF에 맞게 변경
+                    encodedUploadFileName = UriUtils.encode(originalFileName.substring(0, dotIndex) + ".pdf", StandardCharsets.UTF_8);
+                    
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_PDF)
+                            .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition + "; filename=\"" + encodedUploadFileName + "\"")
+                            .body(resource);
+                            
+                } catch (OfficeException e) {
+                    // 변환 실패 시 로그 출력 및 500 에러 처리
+                    e.printStackTrace();
+                    return ResponseEntity.internalServerError().build();
+                }
+            }
         }
 
-        // 파일의 타입을 추론
+        // 파일의 타입을 추론 (오피스 문서가 아니거나 download 모드인 경우)
         String contentType = null;
 
         try {
-            contentType = Files.probeContentType(Paths.get(resourceDto.getOriginalFileName()));
+            contentType = Files.probeContentType(Paths.get(originalFileName));
         } catch (Exception e) {}
 
         // 타입을 못 알아냈을 경우 기본값 설정

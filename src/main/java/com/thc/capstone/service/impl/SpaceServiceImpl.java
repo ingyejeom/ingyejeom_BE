@@ -4,6 +4,8 @@ import com.thc.capstone.domain.*;
 import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.SpaceDto;
 import com.thc.capstone.dto.UserSpaceDto;
+import com.thc.capstone.exception.HandoverInProgressException;
+import com.thc.capstone.mapper.ApprovalMapper;
 import com.thc.capstone.mapper.SpaceMapper;
 import com.thc.capstone.mapper.UserSpaceMapper;
 import com.thc.capstone.repository.GroupRepository;
@@ -39,6 +41,8 @@ public class SpaceServiceImpl implements SpaceService {
 
     // 스페이스 수정 시 권한 체크를 위함
     final UserSpaceMapper userSpaceMapper;
+
+    final ApprovalMapper approvalMapper;
 
     String target = "space";
 
@@ -105,6 +109,10 @@ public class SpaceServiceImpl implements SpaceService {
         // 존재하는 스페이스인지 검증
         Space space = spaceRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("데이터가 없습니다"));
+
+        if (approvalMapper.isHandoverInProgress(space.getId())) {
+            throw new HandoverInProgressException("현재 인수인계가 진행 중이므로 스페이스 정보를 변경할 수 없습니다.");
+        }
 
         // 스페이스 관리 권한 검증
         if (!userSpaceMapper.isSpaceActive(Map.of("userId", reqUserId, "spaceId", space.getId()))) {

@@ -1,14 +1,9 @@
 package com.thc.capstone.controller;
 
-import com.thc.capstone.dto.ChatbotDto;
 import com.thc.capstone.dto.DefaultDto;
-import com.thc.capstone.dto.FileDto;
 import com.thc.capstone.dto.HandoverDto;
 import com.thc.capstone.security.PrincipalDetails;
-import com.thc.capstone.service.ChatbotService;
-import com.thc.capstone.service.FileService;
 import com.thc.capstone.service.HandoverService;
-import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -32,8 +27,6 @@ import java.util.Map;
 public class HandoverRestController {
 
     private final HandoverService handoverService;
-    private final FileService fileService;
-    private final ChatbotService chatbotService;
 
     /**
      * Spring Security 인증 정보에서 사용자 ID를 추출한다.
@@ -189,33 +182,22 @@ public class HandoverRestController {
     }
 
     @PreAuthorize("hasRole('USER')")
+    @GetMapping("/policy")
+    public ResponseEntity<HandoverDto.PolicyResDto> policy(
+            @RequestParam(required = false) Long handoverId,
+            @RequestParam(required = false) Long spaceId,
+            @AuthenticationPrincipal PrincipalDetails principalDetails) {
+
+        return ResponseEntity.ok(handoverService.policy(handoverId, spaceId, getUserId(principalDetails)));
+    }
+
+    @PreAuthorize("hasRole('USER')")
     @PostMapping(value = "/save", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> handoverUpload(
             @ModelAttribute HandoverDto.SaveReqDto param,
             @AuthenticationPrincipal PrincipalDetails principal
     ) throws IOException {
-        Long userId = getUserId(principal);
-
-        // .PDF 인수인계서 처리 (저장 O, 챗봇 ingest X)
-        if (param.getPdfFile() != null && !param.getPdfFile().isEmpty()) {
-            // FileService가 기존 UploadReqDto를 사용하므로 객체 변환
-            FileDto.UploadReqDto pdfReq = FileDto.UploadReqDto.builder()
-                    .files(List.of(param.getPdfFile()))
-                    .spaceId(param.getSpaceId())
-                    .folderId(param.getFolderId())
-                    .build();
-
-            fileService.uploadOnly(pdfReq, userId); // 자료실 저장 완료
-        }
-
-        // .MD 인수인계서 처리 (저장 X, 챗봇 ingest O)
-        if (param.getMdFile() != null && !param.getMdFile().isEmpty()) {
-            byte[] mdFileBytes = param.getMdFile().getBytes();
-
-            ChatbotDto.IngestReqDto ingestReqDto = ChatbotDto.IngestReqDto.builder().spaceId(param.getSpaceId()).fileBytes(mdFileBytes).fileName(param.getMdFile().getOriginalFilename()).build();
-            chatbotService.ingestRequest(ingestReqDto, userId);
-        }
-
+        handoverService.saveGeneratedPdf(param, getUserId(principal));
         return ResponseEntity.ok().build();
     }
 }

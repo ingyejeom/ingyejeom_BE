@@ -19,7 +19,8 @@ public class AuditingFields {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    Boolean deleted;
+    // 해당 값이 null 일 경우 잘못된 도메인이기에 NPE 를 잡기 위해 초기 설정값 false 로 설정
+    Boolean deleted = false;
 
     @CreatedDate
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)

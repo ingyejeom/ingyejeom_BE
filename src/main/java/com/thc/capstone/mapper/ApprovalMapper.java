@@ -17,4 +17,6 @@ public interface ApprovalMapper {
     boolean hasRoleByApprovalIdAndUserId(Long approvalId, Long reqUserId, String requiredRole);
 
     Long findUserSpaceIdByStatus(Long spaceId, String status);
+
+    boolean isHandoverInProgress(Long spaceId);
 }

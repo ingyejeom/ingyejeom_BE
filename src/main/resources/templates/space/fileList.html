@@ -395,7 +395,7 @@
         if(fileInput.files.length === 0) return;
 
         let formData = new FormData();
-        formData.append("file", fileInput.files[0]);
+        formData.append("files", fileInput.files[0]);
         formData.append("spaceId", spaceId);
 
         if(currentFolderId != null) {

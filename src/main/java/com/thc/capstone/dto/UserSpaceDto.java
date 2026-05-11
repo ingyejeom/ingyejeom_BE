@@ -91,6 +91,8 @@ public class UserSpaceDto {
 
         String workName;
         String spaceCode;
+
+        Long ongoingApprovalId;
     }
 
     /**
