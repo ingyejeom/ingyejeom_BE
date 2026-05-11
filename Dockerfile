@@ -3,7 +3,12 @@ FROM eclipse-temurin:17-jdk-jammy
 
 # [추가] LibreOffice(headless) 설치
 # headless: 화면 UI 없이 백그라운드에서만 돌 수 있게 가벼운 버전으로 설치하는 옵션
-RUN apt-get update && apt-get install -y libreoffice-headless libreoffice-writer libreoffice-calc libreoffice-impress
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libreoffice-core \
+    libreoffice-writer \
+    libreoffice-calc \
+    libreoffice-impress \
+    && rm -rf /var/lib/apt/lists/*
 
 # 2. 깃허브 가상 서버에서 빌드되어 생성될 jar 파일의 위치를 변수로 설정합니다.
 ARG JAR_FILE=build/libs/*SNAPSHOT.jar
