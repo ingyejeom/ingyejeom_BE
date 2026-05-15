@@ -37,16 +37,27 @@ public class User extends AuditingFields {
     @Column(nullable = false, unique = true)
     String email;
 
+    /**
+     * 사용자 추가 정보
+     */
+    @Setter
+    String phone;
+    @Setter
+    String birth;
+
+
     protected User() {}
-    private User(String username, String password, String name, String email) {
+    private User(String username, String password, String name, String email, String phone, String birth) {
         this.username = username;
         this.password = password;
         this.name = name;
         this.email = email;
+        this.phone = phone;
+        this.birth = birth;
     }
 
-    public static User of (String username, String password, String name, String email) {
-        return new User(username, password, name, email);
+    public static User of (String username, String password, String name, String email, String phone, String birth) {
+        return new User(username, password, name, email, phone, birth);
     }
 
     /**
@@ -65,6 +76,12 @@ public class User extends AuditingFields {
         }
         if(param.getEmail() != null){
             setEmail(param.getEmail());
+        }
+        if(param.getPhone() != null){
+            setPhone(param.getPhone());
+        }
+        if(param.getBirth() != null){
+            setBirth(param.getBirth());
         }
     }
 

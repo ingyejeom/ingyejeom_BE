@@ -38,7 +38,7 @@ public class UserRestController {
 
     @PreAuthorize("hasRole('USER')")
     @Operation(summary = "유저 정보 수정",
-            description = "유저 정보를 수정합니다. (비밀번호, 이름, 이메일 중 변경할 값만 전달)")
+            description = "유저 정보를 수정합니다. (비밀번호, 이름, 이메일, 휴대폰번호, 생일 중 변경할 값만 전달)")
     @PutMapping("")
     public ResponseEntity<Void> update(@RequestBody UserDto.UpdateReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
         userService.update(param, getUserId(principalDetails));

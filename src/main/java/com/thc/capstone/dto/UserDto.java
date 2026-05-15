@@ -28,9 +28,11 @@ public class UserDto {
         String password;
         String name; // 사용자 실명
         String email;
+        String phone;
+        String birth;
 
         public User toEntity(){
-            return User.of(getUsername(), getPassword(), getName(), getEmail());
+            return User.of(getUsername(), getPassword(), getName(), getEmail(), getPhone(), getBirth());
         }
     }
 
@@ -43,6 +45,8 @@ public class UserDto {
         String password;
         String name;
         String email;
+        String phone;
+        String birth;
     }
 
     /**
@@ -54,6 +58,8 @@ public class UserDto {
         String username;
         String name;
         String email;
+        String phone;
+        String birth;
     }
 
     /**
