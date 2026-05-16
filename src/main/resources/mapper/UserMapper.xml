@@ -11,6 +11,8 @@
              , user.username
              , user.name
              , user.email
+             , user.phone
+             , user.birth
         FROM user
         WHERE user.id = #{id}
     </select>
