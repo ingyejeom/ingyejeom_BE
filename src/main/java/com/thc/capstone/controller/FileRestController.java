@@ -16,6 +16,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,6 +48,7 @@ public class FileRestController {
         return null;
     }
 
+    @PreAuthorize("@spaceSecurityChecker.isMember(#param.spaceId)")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "파일 업로드",
             description = "파일과 함께 spaceId, folderId(선택)를 FormData 형식으로 전송합니다.")
@@ -67,6 +69,7 @@ public class FileRestController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("@spaceSecurityChecker.isMember(#param.spaceId)")
     @PostMapping("/folder")
     @Operation(summary = "폴더 생성",
             description = "새로운 폴더를 생성합니다. 부모 폴더 ID를 지정하여 트리 구조를 만들 수 있습니다.")
@@ -101,6 +104,7 @@ public class FileRestController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("@spaceSecurityChecker.isMember(#param.spaceId)")
     @GetMapping("/list")
     @Operation(summary = "파일 및 폴더 목록 조회",
             description = "특정 스페이스 또는 폴더에 속한 파일과 폴더의 목록을 조회합니다.")
