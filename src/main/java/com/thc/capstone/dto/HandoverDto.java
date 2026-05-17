@@ -9,6 +9,7 @@ import lombok.experimental.SuperBuilder;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 인수인계 문서 데이터 전송 객체 모음
@@ -31,6 +32,8 @@ public class HandoverDto {
         private String text;
         private Long userSpaceId;
 
+        private List<Long> referencedFileIds;
+
         public Handover toEntity() {
             return Handover.of(getTitle(), getRole(), getText(), getUserSpaceId());
         }
@@ -50,6 +53,8 @@ public class HandoverDto {
         private String role;
         private String text;
         private Long spaceId;
+
+        private List<Long> referencedFileIds;
     }
 
     /**
@@ -77,6 +82,9 @@ public class HandoverDto {
         private String title;
         private String role;
         private String text;
+
+        private Long spaceId;
+        private List<Long> referencedFileIds;
     }
 
     /**
