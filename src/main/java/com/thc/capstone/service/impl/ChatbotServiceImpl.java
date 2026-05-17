@@ -3,6 +3,7 @@ package com.thc.capstone.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thc.capstone.domain.Chatbot;
+import com.thc.capstone.domain.Role;
 import com.thc.capstone.domain.UserSpace;
 import com.thc.capstone.domain.UserSpaceStatus;
 import com.thc.capstone.dto.ChatbotDto;
@@ -64,7 +65,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         }
 
         // 권한 및 상태 검증 - 사용자가 해당 스페이스에 소속되어 있고, 상태가 활성(ACTIVE)인지 확인
-        UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(reqUserId, spaceId, UserSpaceStatus.ACTIVE)
+        UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndRoleAndStatus(reqUserId, spaceId, Role.USER, UserSpaceStatus.ACTIVE)
                 .orElseThrow(() -> {
                     log.error("[ChatbotRequest] Active userSpace not found! userId: {}, spaceId: {}", reqUserId, spaceId);
                     return new IllegalStateException("Active userSpace not found for userId=" + reqUserId);
@@ -129,7 +130,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         log.info("[ChatHistory] Fetching history for userId: {}, spaceId: {}", reqUserId, param.getSpaceId());
 
         // 해당 스페이스에 대한 사용자 접근 권한 검증
-        UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(reqUserId, param.getSpaceId(), UserSpaceStatus.ACTIVE)
+        UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndRoleAndStatus(reqUserId, param.getSpaceId(), Role.USER, UserSpaceStatus.ACTIVE)
                 .orElseThrow(() -> {
                     log.error("[ChatHistory] Active userSpace not found! userId: {}, spaceId: {}", reqUserId, param.getSpaceId());
                     return new IllegalStateException("Active userSpace not found for userId=" + reqUserId);

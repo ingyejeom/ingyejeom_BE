@@ -50,7 +50,7 @@ public class FileServiceImpl implements FileService {
         }
 
         // 스페이스에 파일을 올릴 권한이 있는지 확인 (ACTIVE 한 사람)
-        UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(reqUserId, param.getSpaceId(), UserSpaceStatus.ACTIVE)
+        UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndRoleAndStatus(reqUserId, param.getSpaceId(), Role.USER, UserSpaceStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException("해당 스페이스에 대한 권한이 없습니다"));
 
         // 파일 추출
@@ -105,7 +105,7 @@ public class FileServiceImpl implements FileService {
         }
 
         // 스페이스에 파일을 올릴 권한이 있는지 확인 (ACTIVE 한 사람)
-        UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(reqUserId, param.getSpaceId(), UserSpaceStatus.ACTIVE)
+        UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndRoleAndStatus(reqUserId, param.getSpaceId(), Role.USER, UserSpaceStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException("해당 스페이스에 대한 권한이 없습니다"));
 
         // 파일 추출
@@ -170,7 +170,7 @@ public class FileServiceImpl implements FileService {
         }
 
         // 권한 체크 (업로드와 동일)
-        userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(reqUserId, param.getSpaceId(), UserSpaceStatus.ACTIVE)
+        userSpaceRepository.findFirstByUserIdAndSpaceIdAndRoleAndStatus(reqUserId, param.getSpaceId(), Role.USER, UserSpaceStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException("권한이 없습니다"));
 
         // DB에 저장

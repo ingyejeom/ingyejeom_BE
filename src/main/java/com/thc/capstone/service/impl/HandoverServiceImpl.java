@@ -95,8 +95,8 @@ public class HandoverServiceImpl implements HandoverService {
 
         try {
             // userId + spaceId로 ACTIVE 상태의 UserSpace를 찾는다
-            UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(
-                    reqUserId, param.getSpaceId(), UserSpaceStatus.ACTIVE)
+            UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndRoleAndStatus(
+                    reqUserId, param.getSpaceId(), Role.USER, UserSpaceStatus.ACTIVE)
                     .orElseThrow(() -> new RuntimeException("해당 스페이스의 활성 담당자만 인수인계 문서를 생성할 수 있습니다."));
 
             validateSpaceCanAcceptDraft(param.getSpaceId(), reqUserId);
@@ -132,8 +132,8 @@ public class HandoverServiceImpl implements HandoverService {
     public void update(HandoverDto.UpdateReqDto param, Long reqUserId) {
         Handover handover = handoverRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 인수인계 문서입니다."));
-        UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(
-                        reqUserId, param.getSpaceId(), UserSpaceStatus.ACTIVE)
+        UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndRoleAndStatus(
+                        reqUserId, param.getSpaceId(), Role.USER, UserSpaceStatus.ACTIVE)
                 .orElseThrow(() -> new RuntimeException("해당 스페이스의 활성 담당자만 인수인계 문서를 생성할 수 있습니다."));
 
         validateCanEdit(handover.getId(), reqUserId);
