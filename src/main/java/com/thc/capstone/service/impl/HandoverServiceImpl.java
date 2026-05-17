@@ -1,12 +1,10 @@
 package com.thc.capstone.service.impl;
 
-import com.thc.capstone.domain.Folder;
-import com.thc.capstone.domain.Handover;
-import com.thc.capstone.domain.UserSpace;
-import com.thc.capstone.domain.UserSpaceStatus;
+import com.thc.capstone.domain.*;
 import com.thc.capstone.dto.ChatbotDto;
 import com.thc.capstone.dto.DefaultDto;
 import com.thc.capstone.dto.HandoverDto;
+import com.thc.capstone.exception.OmittedFileException;
 import com.thc.capstone.mapper.HandoverMapper;
 import com.thc.capstone.repository.FileRepository;
 import com.thc.capstone.repository.FolderRepository;
@@ -17,6 +15,7 @@ import com.thc.capstone.service.HandoverService;
 import com.thc.capstone.service.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.entity.FileEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -63,6 +62,16 @@ public class HandoverServiceImpl implements HandoverService {
             String title = resolveTitle(param.getTitle(), param.getRole());
             String text = resolveText(param.getText(), title, param.getRole());
 
+            /**/
+            if (param.getReferencedFileIds() != null && !param.getReferencedFileIds().isEmpty()) {
+                List<File> referencedFiles = fileRepository.findAllById(param.getReferencedFileIds());
+                for (File file : referencedFiles) {
+                    file.setReferenceCount(file.getReferenceCount() + 1);
+                }
+                fileRepository.saveAll(referencedFiles);
+            }
+            /**/
+
             Handover handover = Handover.of(title, param.getRole(), text, param.getUserSpaceId());
             handoverRepository.save(handover);
 
@@ -96,6 +105,16 @@ public class HandoverServiceImpl implements HandoverService {
             String title = resolveTitle(param.getTitle(), param.getRole());
             String text = resolveText(param.getText(), title, param.getRole());
 
+            /**/
+            if (param.getReferencedFileIds() != null && !param.getReferencedFileIds().isEmpty()) {
+                List<File> referencedFiles = fileRepository.findAllById(param.getReferencedFileIds());
+                for (File file : referencedFiles) {
+                    file.setReferenceCount(file.getReferenceCount() + 1);
+                }
+                fileRepository.saveAll(referencedFiles);
+            }
+            /**/
+
             Handover handover = Handover.of(title, param.getRole(), text, userSpace.getId());
             handoverRepository.save(handover);
 
@@ -113,9 +132,29 @@ public class HandoverServiceImpl implements HandoverService {
     public void update(HandoverDto.UpdateReqDto param, Long reqUserId) {
         Handover handover = handoverRepository.findById(param.getId())
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 인수인계 문서입니다."));
+        UserSpace userSpace = userSpaceRepository.findFirstByUserIdAndSpaceIdAndStatus(
+                        reqUserId, param.getSpaceId(), UserSpaceStatus.ACTIVE)
+                .orElseThrow(() -> new RuntimeException("해당 스페이스의 활성 담당자만 인수인계 문서를 생성할 수 있습니다."));
 
         validateCanEdit(handover.getId(), reqUserId);
         checkPermission(handover.getUserSpaceId(), reqUserId);
+
+        /**/
+        List<File> allUserFiles = fileRepository.findAllByUserSpaceId(userSpace.getId());
+        List<Long> newFileIds = param.getReferencedFileIds() != null ? param.getReferencedFileIds() : new ArrayList<>();
+
+        for (File file : allUserFiles) {
+            boolean isNowReferenced = newFileIds.contains(file.getId());
+
+            if (isNowReferenced && file.getReferenceCount() == 0) {
+                file.setReferenceCount(1L);
+            }
+            else if (!isNowReferenced && file.getReferenceCount() > 0) {
+                file.setReferenceCount(0L);
+            }
+        }
+        fileRepository.saveAll(allUserFiles);
+        /**/
 
         handover.update(param);
         handoverRepository.save(handover);

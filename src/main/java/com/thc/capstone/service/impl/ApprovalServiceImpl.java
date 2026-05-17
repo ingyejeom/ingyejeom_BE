@@ -6,6 +6,7 @@ import com.thc.capstone.dto.ApprovalDto;
 import com.thc.capstone.dto.UserApprovalDto;
 import com.thc.capstone.dto.UserSpaceDto;
 import com.thc.capstone.exception.HandoverInProgressException;
+import com.thc.capstone.exception.OmittedFileException;
 import com.thc.capstone.mapper.ApprovalMapper;
 import com.thc.capstone.repository.*;
 import com.thc.capstone.service.PermittedService;
@@ -32,6 +33,8 @@ public class ApprovalServiceImpl implements ApprovalService {
     final UserSpaceService userSpaceService;
     final UserApprovalService userApprovalService;
     final UserApprovalRepository userApprovalRepository;
+
+    private final FileRepository fileRepository;
 
     String target = "approval";
 
@@ -69,6 +72,32 @@ public class ApprovalServiceImpl implements ApprovalService {
         if (assignorId.equals(assigneeId)) {
             throw new RuntimeException("본인 스스로에게 인계할 수 없습니다.");
         }
+
+        /**/
+        Long assignorUserSpaceId = approvalMapper.findUserSpaceIdByStatus(spaceId, UserSpaceStatus.ACTIVE.toString());
+
+        System.out.println("=== [디버깅] 누락 파일 검증 시작 ===");
+        System.out.println("1. 조회된 assignorUserSpaceId: {" + assignorUserSpaceId + "}");
+
+        if (assignorUserSpaceId != null) {
+            List<File> allUserFiles = fileRepository.findAllByUserSpaceId(assignorUserSpaceId);
+            System.out.println("2. DB에서 조회된 전체 파일 개수: {" + allUserFiles.size() + "}개");
+            List<String> omittedFileNames = new ArrayList<>();
+
+            for (File file : allUserFiles) {
+                if (file.getReferenceCount() == 0) {
+                    omittedFileNames.add(file.getOriginalFileName());
+                }
+            }
+            System.out.println("3. 최종 누락 판정된 파일 개수: {" + omittedFileNames.size() + "}개");
+
+
+            if (!omittedFileNames.isEmpty()) {
+                log.warn("인수인계 시작 실패 - 누락된 파일 목록: {}", omittedFileNames);
+                throw new OmittedFileException("인수인계서에 첨부되지 않은 파일이 있습니다: " + String.join(", ", omittedFileNames));
+            }
+        }
+        /**/
 
         Approval approval = approvalRepository.save(param.toEntity());
 

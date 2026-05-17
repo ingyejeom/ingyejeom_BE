@@ -11,6 +11,8 @@ import lombok.Setter;
 @Entity
 @Table(name = "tb_file")
 public class File extends AuditingFields {
+    public static final Long INITIAL_REFERENCE_COUNT = 0L;
+
     /**
      * 원본 파일명 (화면 표시용)
      */
@@ -49,6 +51,9 @@ public class File extends AuditingFields {
     @Setter
     private Long folderId;
 
+    @Setter
+    private Long referenceCount;
+
     protected File() {}
     private File(String originalFileName, String storeFileName, String fileUrl, Long size, Long userSpaceId, Long folderId) {
         this.originalFileName = originalFileName;
@@ -57,6 +62,7 @@ public class File extends AuditingFields {
         this.size = size;
         this.userSpaceId = userSpaceId;
         this.folderId = folderId;
+        this.referenceCount = INITIAL_REFERENCE_COUNT;
     }
 
     public static File of (String originalFileName, String storeFileName, String fileUrl, Long size, Long userSpaceId, Long folderId) {
