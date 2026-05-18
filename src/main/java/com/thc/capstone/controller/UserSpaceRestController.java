@@ -95,7 +95,7 @@ public class UserSpaceRestController {
         return ResponseEntity.ok(userSpaceService.getDashboardSpaces(param, getUserId(principalDetails)));
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER') and @groupSecurityChecker.isGroupAdmin(#param.groupId)")
     @Operation(summary = "그룹 관리 페이지의 스페이스 조회 (스크롤 리스트)",
             description = "groupId를 통해 해당 그룹에서 관리자로 존재하는 스페이스 리스트를 스크롤 리스트로 조회합니다.")
     @GetMapping("/getAdminSpaces")

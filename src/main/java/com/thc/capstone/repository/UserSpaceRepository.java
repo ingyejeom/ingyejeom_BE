@@ -15,6 +15,8 @@ public interface UserSpaceRepository extends JpaRepository<UserSpace, Long> {
 
     Optional<UserSpace> findFirstByUserIdAndSpaceIdAndStatus(Long userId, Long spaceId, UserSpaceStatus status);
 
+    Optional<UserSpace> findFirstByUserIdAndSpaceIdAndStatusInAndRoleInAndDeleted(Long userId, Long spaceId, java.util.Collection<UserSpaceStatus> statuses, java.util.Collection<Role> roles, boolean deleted);
+
     // userId + spaceId로 조회 (status 무관)
     Optional<UserSpace> findFirstByUserIdAndSpaceId(Long userId, Long spaceId);
 

@@ -86,7 +86,7 @@ public class ApprovalRestController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("permitAll()")
+    @PreAuthorize("permitAll() and @spaceSecurityChecker.isMember(#param.spaceId)")
     @Operation(summary = "서명 테이블 정보 조회",
             description = "서명 테이블의 상세 정보를 조회합니다. (현재 상태, 스페이스 ID)")
     @GetMapping("")
