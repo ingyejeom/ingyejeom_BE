@@ -7,6 +7,7 @@ import com.thc.capstone.service.GroupService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,6 +36,7 @@ public class GroupRestController {
         return ResponseEntity.ok(groupService.create(param, getUserId(principalDetails)));
     }
 
+    @PreAuthorize("@groupSecurityChecker.isGroupAdmin(#param.id)")
     @PutMapping("")
     @Operation(summary = "그룹 정보 수정",
             description = "그룹 정보를 수정합니다. (그룹 이름(선택))")
@@ -44,6 +46,7 @@ public class GroupRestController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("@groupSecurityChecker.isGroupAdmin(#param.id)")
     @DeleteMapping("")
     @Operation(summary = "그룹 삭제",
             description = "속한 스페이스를 모두 삭제한 후 그룹을 삭제합니다.")

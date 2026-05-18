@@ -28,6 +28,7 @@ public class ApprovalRestController {
         return null;
     }
 
+    @PreAuthorize("@spaceSecurityChecker.isMember(#param.spaceId)")
     @Operation(summary = "인수인계 시작",
             description = "이메일을 통해 해당 유저를 대상으로 인수인계를 위한 서명 기능이 시작됩니다")
     @PostMapping("/start")
@@ -37,7 +38,7 @@ public class ApprovalRestController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER') and @spaceSecurityChecker.isMember(#param.spaceId)")
     @Operation(summary = "서명 테이블 생성",
             description = "서명 테이블 정보를 받아 새로운 서명 테이블를 생성합니다.")
     @PostMapping("")
@@ -85,7 +86,7 @@ public class ApprovalRestController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("permitAll()")
+    @PreAuthorize("permitAll() and @spaceSecurityChecker.isMember(#param.spaceId)")
     @Operation(summary = "서명 테이블 정보 조회",
             description = "서명 테이블의 상세 정보를 조회합니다. (현재 상태, 스페이스 ID)")
     @GetMapping("")

@@ -40,7 +40,7 @@ public class ChatbotRestController {
      * @param principalDetails 현재 로그인 사용자의 정보
      * @return HTTP 상태코드와 응답 결과
      */
-    @PreAuthorize("hasRole('USER')") // 인가된 일반 회원(USER)만 접근 가능
+    @PreAuthorize("hasRole('USER') and @spaceSecurityChecker.isMember(#param.spaceId)") // 인가된 일반 회원(USER)만 접근 가능
     @Operation(summary = "챗봇 질문하기", description = "사용자의 질문을 파이썬 RAG 챗봇 서버로 전달하고, 답변을 받아 반환합니다.")
     @PostMapping("")
     public ResponseEntity<ChatbotDto.ChatResDto> askChatbot(@RequestBody ChatbotDto.ChatReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {
@@ -55,6 +55,7 @@ public class ChatbotRestController {
      * @param principalDetails 사용자의 인증 정보
      * @return HTTP 상태코드와 응답 결과 List
      */
+    @PreAuthorize("@spaceSecurityChecker.isMember(#param.spaceId)")
     @Operation(summary = "챗봇 대화 기록 조회", description = "특정 스페이스 내에서 이루어진 과거의 대화 내역을 시간순으로 조회합니다.")
     @GetMapping("/history")
     public ResponseEntity<List<ChatbotDto.HistoryResDto>> getChatHistory(@ModelAttribute ChatbotDto.HistoryReqDto param, @AuthenticationPrincipal PrincipalDetails principalDetails) {

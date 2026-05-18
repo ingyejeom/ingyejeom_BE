@@ -47,6 +47,11 @@ public class GroupServiceImpl implements GroupService {
             throw new RuntimeException("로그인이 필요한 서비스입니다.");
         }
 
+        // 빈 그룹 생성을 방지하기 위해 최소 1개의 스페이스가 있는지 검증
+        if (param.getSpaces() == null || param.getSpaces().isEmpty()) {
+            throw new RuntimeException("최소 하나의 스페이스를 포함해야 그룹을 생성할 수 있습니다.");
+        }
+
         // 그룹 생성과 스페이스 목록 생성을 한 묶음으로 처리
         try {
             // Group 생성

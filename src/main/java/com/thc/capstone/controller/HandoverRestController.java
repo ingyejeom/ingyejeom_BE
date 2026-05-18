@@ -56,7 +56,7 @@ public class HandoverRestController {
      * spaceId로 새 인수인계 문서를 생성한다.
      * 프론트엔드에서 userSpaceId 대신 spaceId를 전달할 때 사용한다.
      */
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER') and @spaceSecurityChecker.isMember(#param.spaceId)")
     @PostMapping("/bySpace")
     public ResponseEntity<DefaultDto.CreateResDto> createBySpaceId(
             @RequestBody HandoverDto.CreateBySpaceIdReqDto param,
@@ -110,7 +110,7 @@ public class HandoverRestController {
      * 특정 스페이스의 루트 폴더에 있는 인수인계 문서 목록을 조회한다.
      * 하위 폴더의 문서는 포함되지 않는다.
      */
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER') and @spaceSecurityChecker.isMember(#spaceId)")
     @GetMapping("/space/{spaceId}")
     public ResponseEntity<List<HandoverDto.DetailResDto>> listBySpaceId(
             @PathVariable Long spaceId,
@@ -122,7 +122,7 @@ public class HandoverRestController {
     /**
      * 특정 스페이스의 특정 폴더에 있는 인수인계 문서 목록을 조회한다.
      */
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER') and @spaceSecurityChecker.isMember(#spaceId)")
     @GetMapping("/space/{spaceId}/folder/{folderId}")
     public ResponseEntity<List<HandoverDto.DetailResDto>> listBySpaceIdAndFolderId(
             @PathVariable Long spaceId,
@@ -181,7 +181,7 @@ public class HandoverRestController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER') and (#spaceId == null or @spaceSecurityChecker.isMember(#spaceId))")
     @GetMapping("/policy")
     public ResponseEntity<HandoverDto.PolicyResDto> policy(
             @RequestParam(required = false) Long handoverId,
@@ -191,7 +191,7 @@ public class HandoverRestController {
         return ResponseEntity.ok(handoverService.policy(handoverId, spaceId, getUserId(principalDetails)));
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER') and @spaceSecurityChecker.isMember(#param.spaceId)")
     @PostMapping(value = "/save", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> handoverUpload(
             @ModelAttribute HandoverDto.SaveReqDto param,

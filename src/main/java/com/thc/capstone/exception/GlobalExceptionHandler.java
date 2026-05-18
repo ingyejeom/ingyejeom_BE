@@ -21,7 +21,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    // 2. 그 외 일반적인 런타임 예외 처리 (권한 에러, 데이터 없음 등)
+    // 인가 실패 (권한 없음) 예외 처리 (SpaceSecurityChecker 및 GroupSecurityChecker 등에서 false 반환 시 발생)
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDeniedException(org.springframework.security.access.AccessDeniedException e, jakarta.servlet.http.HttpServletRequest request) {
+        Map<String, String> response = new HashMap<>();
+        
+        String requestURI = request.getRequestURI();
+        if (requestURI.startsWith("/api/group") || requestURI.contains("/getAdminSpaces")) {
+            response.put("message", "해당 그룹의 관리에 접근할 권한이 없습니다.");
+        } else {
+            response.put("message", "다른 스페이스에는 접근이 제한됩니다.");
+        }
+        
+        response.put("error", "ACCESS_DENIED");
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    // 그 외 일반적인 런타임 예외 처리 (권한 에러, 데이터 없음 등)
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException e) {
         Map<String, String> response = new HashMap<>();
