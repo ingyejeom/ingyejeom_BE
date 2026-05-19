@@ -7,6 +7,7 @@ import com.thc.capstone.service.ApprovalService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -86,7 +87,7 @@ public class ApprovalRestController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("permitAll() and @spaceSecurityChecker.isMember(#param.spaceId)")
+    @PostAuthorize("permitAll() and @spaceSecurityChecker.isMember(returnObject.body.spaceId)")
     @Operation(summary = "서명 테이블 정보 조회",
             description = "서명 테이블의 상세 정보를 조회합니다. (현재 상태, 스페이스 ID)")
     @GetMapping("")
