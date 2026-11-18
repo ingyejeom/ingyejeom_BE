@@ -3,14 +3,39 @@
 본 프로젝트는 RAG 기반 챗봇을 이용한 인수인계 플랫폼, 인계점의 백엔드 리포지토리입니다.<br>
 프론트엔드와 백엔드가 분리된 구조로, 본 리포지토리는 RESTful API 서버의 역할을 담당합니다.<br>(참고: 리포지토리 내의 일부 HTML/Thymeleaf 파일은 테스트용 어드민 페이지 등으로 사용됩니다.)
 
+## 📑 Table of Contents
+- [Why 인계점?](#-why-인계점)
+- [Tech Stack](#-tech-stack)
+- [System Architecture](#️-system-architecture)
+- [Database ERD](#️-database-erd)
+- [Key Features](#-key-features)
+- [Deployment](#-deployment)
+- [Project Structure](#-project-structure)
+- [Getting Started](#️-getting-started-local-development)
+- [API Documentation](#-api-documentation)
+- [Contributing](#-contributing)
+- [Team & Roles](#-team--roles)
+
+## 💡 Why 인계점?
+
+담당자가 바뀌거나 퇴사할 때 인수인계는 보통 문서 몇 장과 구두 설명으로 끝납니다. 그 결과 자료는 여기저기 흩어지고, 중요한 내용이 빠지며, 인계자가 떠난 뒤에는 물어볼 사람이 없습니다.<br>
+인계점은 이 문제를 다음과 같이 해결합니다.
+
+| 문제 | 인계점의 해결 방식 |
+|---|---|
+| 자료가 흩어져 있다 | 업무(스페이스) 단위로 파일 · 폴더 · 인수인계서를 한곳에서 관리 |
+| 인계 내용이 빠진다 | 모듈 단위로 인수인계서를 구성하고, 인수인계서에 한 번도 첨부되지 않은 자료가 있으면 인계를 시작할 수 없도록 차단 |
+| 책임 소재가 불분명하다 | 인계자 → 인수자 → 관리자 순차 서명으로 인계 완료를 기록 |
+| 인계 후 물어볼 사람이 없다 | 스페이스 자료를 학습한 RAG 챗봇이 근거 자료와 함께 답변 |
+
 ## 🛠 Tech Stack
 
 - **Language:** Java 17
-- **Framework:** Spring Boot
+- **Framework:** Spring Boot 4.0.1
 - **Database / ORM:** MySQL, Spring Data JPA, MyBatis (복잡한 쿼리 처리용)
 - **Security:** Spring Security, JWT (jjwt, auth0), AES256 (데이터 암호화)
 - **Storage:** AWS S3 (파일 업로드/다운로드)
-- **API Docs:** Swagger (Springdoc OpenAPI 2.3.0)
+- **API Docs:** Swagger (Springdoc OpenAPI 3.0.3)
 - **Others:** Spring Boot RestClient (외부 API 연동)
 
 ## 🏛️ System Architecture
@@ -149,9 +174,9 @@ erDiagram
 2. **협업 공간 및 조직 관리 (Space & Group)**
    - 워크스페이스(Space) 생성 및 멤버 초대
    - 그룹(Group) 단위의 관리 및 조직도 구성
-3. **전자 결재 시스템 (Approval)**
-   - 결재 상신, 승인, 반려 등의 상태를 관리하는 워크플로우 (UserApproval)
-   - 단계별 결재 상태(StepStatus) 추적
+3. **인수인계 서명 (Approval)**
+   - 인계자(ASSIGNOR) → 인수자(ASSIGNEE) → 관리자(ADMIN) 순차 서명 워크플로우 (UserApproval)
+   - 단계별 진행 상태(StepStatus) 추적 및 서명 시각 기록
 4. **업무 인수인계 (Handover)**
    - 담당자 변경 및 퇴사 시 업무 인수인계 내역 기록 및 조회 기능
 5. **파일 및 폴더 관리 (File & Folder)**
@@ -196,8 +221,11 @@ src/main/java/com/thc/capstone
 
 ### Environment Variables
 
-프로젝트를 실행하기 위해 `src/main/resources/application.yml` (혹은 `.properties`) 파일에 다음 정보들이 필요합니다.
+프로젝트를 실행하려면 `src/main/resources/application.yaml` 파일이 필요합니다.
 해당 파일은 보안상 리포지토리에 커밋되지 않으므로 팀원 간 별도 공유가 필요합니다.
+
+<details>
+<summary><b>application.yaml 예시 펼치기</b></summary>
 
 ```yaml
 spring:
@@ -259,7 +287,7 @@ spring:
 springdoc:
    use-fqn: true                           # 클래스 이름 중복 충돌 방지를 위해 패키지명(FQN)을 포함하여 표시
 
-# 7. 커스텀 외부 연동 설정 (JWT, 파일, 챗봇, AWS)
+# 7. 커스텀 외부 연동 설정 (JWT, 챗봇, AWS)
 external:
    jwt:
       tokenSecretKey: your_jwt_secret_key_here       # JWT 암호화에 사용될 강력한 비밀키 (512bit 이상 권장)
@@ -268,10 +296,6 @@ external:
       accessTokenExpirationTime: 1800000             # Access Token 만료 시간 (30분 = 1,800,000ms)
       refreshKey: RefreshToken                       # Refresh Token 헤더 명
       refreshTokenExpirationTime: 1209600000         # Refresh Token 만료 시간 (14일 = 1,209,600,000ms)
-
-file:
-   # 로컬 파일 저장 경로 (경로 끝에 '/' 필수, 윈도우 환경 주의)
-   dir: C:/Users/user/Desktop/project/files/
 
 chatbot:
    python:
@@ -292,6 +316,8 @@ cloud:
          secret-key: your_aws_secret_key      # AWS IAM 계정의 Secret Key
 ```
 
+</details>
+
 ### Build & Run
 ```bash
 # 의존성 설치 및 빌드
@@ -307,84 +333,9 @@ cloud:
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 - Test Front-end : `http://localhost:8080/user/login`
 
-## 🤝 Branch Strategy & Conventions
+## 🤝 Contributing
 
-### 📌 브랜치 이름 규칙
-`분류/기능-요약` 형식을 사용하며, **소문자와 하이픈(-)** 만 사용합니다. (Kebab Case)
-* 예시: `feature/email-sender` (O) / `feature/emailSender` (X)
-
-| 브랜치명 | 설명 |
-|---|---|
-| `main` | 배포 가능한 안정화 상태 (직접 Push 금지) |
-| `develop` | 다음 버전을 위한 통합 개발 브랜치 |
-| `feature/...` | 새로운 기능 개발 |
-| `fix/...` | 버그 수정 |
-| `refactor/...` | 기능 변화 없는 코드 구조 및 로직 개선 |
-
-### 📌 커밋 메시지 규칙
-`[Type] 제목` 형식을 사용하며, 제목은 50자 이내의 **명사형 종결**을 권장합니다.
-* (선택) 상세 내용: 무엇을, 왜 변경했는지 본문에 추가 설명
-
-| 태그(Type) | 의미 (Description) | 사용 예시 |
-|---|---|---|
-| `[feat]` | 새로운 기능 추가 | `[feat] 소셜 로그인 API 구현` |
-| `[edit]` | 버그 또는 기존 기능 수정 | `[edit] 결제 금액 계산 오류 수정` |
-| `[docs]` | 문서 작업 (README 등) | `[docs] API 명세서 업데이트` |
-| `[style]` | 코드 포맷팅 (로직 변경 X) | `[style] 코드 들여쓰기 및 세미콜론 정리` |
-| `[refactor]` | 코드 리팩토링 (기능 변경 X) | `[refactor] 중복되는 유틸 함수 통합` |
-| `[test]` | 테스트 코드 추가/수정 | `[test] 회원가입 서비스 유닛 테스트 작성` |
-| `[chore]` | 빌드, 패키지 매니저 등 | `[chore] .gitignore 파일 수정` |
-
----
-
-## 🔄 협업 워크플로우 (The Loop)
-
-**[1. 최신화] → [2. 브랜치 생성] → [3. 작업/저장] → [4. 업로드] → [5. PR 및 리뷰] → [6. 병합(완료)]**
-
-### 1. 작업 시작 전 최신화 (Sync)
-로컬의 `develop` 브랜치를 원격 저장소의 최신 상태로 동기화합니다.
-```bash
-git checkout develop
-git pull origin develop
-```
-### 2. 작업 브랜치 생성 (Start)
-develop에서 내가 작업할 전용 공간을 만듭니다.
-
-```Bash
-git checkout -b feature/작업명
-```
-### 3. 작업 및 커밋 (Coding)
-규칙에 맞춰 코드를 작성하고 커밋합니다.
-
-```Bash
-git add .
-git commit -m "[feat] 핵심 작업 내용 요약"
-```
-
-### 4. 깃허브로 업로드 (Push)
-내 로컬 브랜치를 원격 저장소로 보냅니다.
-
-```Bash
-git push origin feature/작업명
-```
-
-### 5. PR 생성 및 리뷰 (Pull Request)
-- GitHub 저장소에 접속하여 Compare & pull request 버튼을 클릭합니다.
-
-- 🚨 주의: Base 브랜치가 main이 아닌 **develop**인지 반드시 확인합니다.
-
-- 제목과 작업 내용을 작성하고, 리뷰어(Reviewers)를 지정한 뒤 PR을 생성합니다.
-
-- 피드백을 받아 코드를 수정했다면 다시 git add → git commit → git push를 진행합니다. (기존 PR에 자동 반영됨)
-
-### 6. 작업 종료 및 청소 (Clean up)
-PR이 승인(Approve)되어 develop에 병합되면, 다음 작업을 위해 로컬 환경을 정리합니다.
-
-```Bash
-git checkout develop
-git pull origin develop
-git branch -d feature/작업명  # (선택) 다 쓴 브랜치 삭제
-```
+브랜치 전략, 커밋 메시지 규칙, PR 워크플로우는 [CONTRIBUTING.md](./CONTRIBUTING.md)를 참고해주세요.
 
 ---
 
