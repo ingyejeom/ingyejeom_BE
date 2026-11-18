@@ -186,14 +186,17 @@ erDiagram
    - 내부 데이터를 활용할 수 있는 외부 RAG 챗봇 API와의 통신 기능 (`RagChatbotClient`)
 
 ## 🚀 Deployment
-현재 프로젝트는 GitHub Actions와 Docker를 이용해 배포 파이프라인이 구성되어 있습니다.
+> ⚠️ **현재 운영 서버는 종료된 상태입니다.** 프로젝트 종료 후 EC2 인스턴스를 내렸으며, 배포 워크플로우도 비활성화했습니다.<br>
+> 아래는 운영 당시의 배포 구성입니다.
+
+GitHub Actions와 Docker를 이용해 `main` 브랜치에 푸시되면 EC2로 자동 배포되도록 구성했습니다.
 
 - **CI/CD**: GitHub Actions (`.github/workflows/deploy.yml`)
 - **Containerization**: Docker (`Dockerfile`)
 - **Infra/Server**: AWS EC2 (Ubuntu 22.04 LTS, t3.micro)
 - **Database**: EC2 내 로컬 MySQL
 - **Web Server**: Nginx (Reverse Proxy)
-- **Prod Server URL**: `https://ingyejeom.cloud`
+- **Prod Server URL**: ~~`https://ingyejeom.cloud`~~ (서비스 종료)
 
 ## 📂 Project Structure
 
