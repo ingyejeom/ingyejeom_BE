@@ -3,23 +3,6 @@
 본 프로젝트는 RAG 기반 챗봇을 이용한 인수인계 플랫폼, 인계점의 백엔드 리포지토리입니다.<br>
 프론트엔드와 백엔드가 분리된 구조로, 본 리포지토리는 RESTful API 서버의 역할을 담당합니다.<br>(참고: 리포지토리 내의 일부 HTML/Thymeleaf 파일은 테스트용 어드민 페이지 등으로 사용됩니다.)
 
-## 📅 Schedule / Milestones
-> **TODO**: 실제 캡스톤 진행 일정에 맞춰 수정해주세요.
-- **202X.0X - 202X.0X**: 기획 및 요구사항 정의
-- **202X.0X - 202X.0X**: 시스템 아키텍처 및 데이터베이스(ERD), API 설계
-- **202X.0X - 202X.0X**: 백엔드 핵심 API, 챗봇 연동 및 어드민 페이지 구현
-- **202X.0X - 202X.0X**: 프론트엔드 연동 통합 테스트 및 QA
-- **202X.0X**: 최종 배포 및 발표 준비
-
-## 👥 Team & Roles
-> **TODO**: 팀원들의 이름, GitHub 아이디, 역할로 채워주세요.
-> 
-| 👑 팀장 TODO_이름 | 💻 팀원 TODO_이름 | 💻 팀원 TODO_이름 |
-|:---:|:---:|:---:|
-| <img src="https://github.com/TODO_id.png" width="100"> | <img src="https://github.com/TODO_id.png" width="100"> | <img src="https://github.com/TODO_id.png" width="100"> |
-| [@TODO_id](https://github.com/TODO_id) | [@TODO_id](https://github.com/TODO_id) | [@TODO_id](https://github.com/TODO_id) |
-| **Backend & Infra**<br>- 시스템 아키텍처 설계<br>- AWS CI/CD 구축 | **Backend API**<br>- 결재 시스템 API 개발<br>- RAG 챗봇 연동 | **Frontend / QA**<br>- 어드민 페이지 개발<br>- 통합 테스트 |
-
 ## 🛠 Tech Stack
 
 - **Language:** Java 17
@@ -41,9 +24,123 @@ graph LR
 ![ERD Image](./architecture.svg)
 
 ## 🗄️ Database ERD
-> **TODO**: 설계하신 프로젝트 ERD 이미지(예: erd.png)를 캡처하여 리포지토리에 올리고 아래에 링크를 삽입해주세요.
-> 
-> `![ERD Image](./docs/erd.png)`
+
+> 모든 테이블은 공통 감사 필드(`id`, `deleted`, `created_at`, `modified_at`)를 가지며(`AuditingFields`), 삭제는 `deleted` 플래그를 이용한 소프트 삭제로 처리합니다.<br>
+> 엔티티 간 연관관계는 JPA 연관 매핑 대신 ID 컬럼(논리적 FK)으로 연결합니다.
+
+```mermaid
+erDiagram
+    USER {
+        Long id PK
+        String username UK
+        String password
+        String name
+        String email UK
+        String phone
+        String birth
+    }
+    REFRESH_TOKEN {
+        Long id PK
+        Long userId FK
+        String content
+    }
+    PERMISSION {
+        Long id PK
+        String title
+        String content
+    }
+    PERMISSIONDETAIL {
+        Long id PK
+        Long permissionId FK
+        String target "접근 대상 테이블명"
+        Integer func "110 입력 / 120 수정 / 200 조회"
+    }
+    PERMISSIONUSER {
+        Long id PK
+        Long permissionId FK
+        Long userId FK
+    }
+    TB_GROUP {
+        Long id PK
+        String groupName
+    }
+    SPACE {
+        Long id PK
+        String workName
+        String spaceCode
+        Long groupId FK
+    }
+    USER_SPACE {
+        Long id PK
+        Long userId FK
+        Long spaceId FK
+        Role role "ADMIN / USER"
+        UserSpaceStatus status "ACTIVE / INVITED / PENDING / INACTIVE / REJECTED"
+    }
+    FOLDER {
+        Long id PK
+        String name
+        Long parentId FK "상위 폴더 (null이면 루트)"
+        Long spaceId FK
+    }
+    TB_FILE {
+        Long id PK
+        String originalFileName
+        String storeFileName UK
+        String fileUrl
+        Long size
+        Long referenceCount "인수인계서에서 참조된 횟수"
+        Long userSpaceId FK
+        Long folderId FK
+    }
+    HANDOVER {
+        Long id PK
+        String title
+        String role
+        String text
+        Long userSpaceId FK
+        Long folderId FK
+        LocalDateTime pdfGeneratedAt
+        Long pdfGeneratedBy
+    }
+    APPROVAL {
+        Long id PK
+        Long spaceId FK
+        StepStatus stepStatus "ASSIGNOR_TURN / ASSIGNEE_TURN / ADMIN_TURN / COMPLETED"
+    }
+    USER_APPROVAL {
+        Long id PK
+        Long approvalId FK
+        Long userId FK
+        ApprovalRole approvalRole "ASSIGNOR / ASSIGNEE / ADMIN"
+        LocalDateTime signedAt
+    }
+    CHATBOT {
+        Long id PK
+        Long userSpaceId FK
+        String question
+        String answer
+        String sourcesJson "답변 근거 자료"
+    }
+
+    USER ||--o{ REFRESH_TOKEN : "발급"
+    USER ||--o{ PERMISSIONUSER : "부여받음"
+    PERMISSION ||--o{ PERMISSIONUSER : "할당"
+    PERMISSION ||--o{ PERMISSIONDETAIL : "세부 권한"
+    TB_GROUP ||--o{ SPACE : "포함"
+    USER ||--o{ USER_SPACE : "참여"
+    SPACE ||--o{ USER_SPACE : "멤버"
+    SPACE ||--o{ FOLDER : "보유"
+    FOLDER |o--o{ FOLDER : "하위 폴더"
+    FOLDER |o--o{ TB_FILE : "보관"
+    USER_SPACE ||--o{ TB_FILE : "업로드"
+    USER_SPACE ||--o{ HANDOVER : "작성"
+    FOLDER |o--o{ HANDOVER : "보관"
+    SPACE ||--o{ APPROVAL : "결재"
+    APPROVAL ||--o{ USER_APPROVAL : "결재선"
+    USER ||--o{ USER_APPROVAL : "서명"
+    USER_SPACE ||--o{ CHATBOT : "질의"
+```
 
 ## 📌 Key Features
 
@@ -289,3 +386,12 @@ git checkout develop
 git pull origin develop
 git branch -d feature/작업명  # (선택) 다 쓴 브랜치 삭제
 ```
+
+---
+
+## 👥 Team & Roles
+
+| 👑 팀장 조상근 | 💻 팀원 김성규 | 💻 팀원 전은인 | 💻 팀원 윤유원 |
+|:---:|:---:|:---:|:---:|
+| [@Sanggeun-Cho](https://github.com/Sanggeun-Cho) | [@seooonggyu](https://github.com/seooonggyu) | [@Skarfz](https://github.com/Skarfz) | [@uone0628](https://github.com/uone0628) |
+| **Backend**<br>- 프로젝트 초기 세팅 및 아키텍처 설계<br>- User · Space · Group · UserSpace 도메인 API<br>- Spring Security 기반 권한 체계 및 스페이스 접근 제어<br>- 파일 · 폴더 관리 및 문서 미리보기<br>- 전자 서명(결재) 기능 | **Backend & Infra**<br>- Python RAG 챗봇 연동 (문서 ingest, 스페이스별 분리, 대화 기록, 근거 자료 표시)<br>- AWS S3 파일 스토리지 연동<br>- GitHub Actions CI/CD 구축<br>- 인수인계 누락 방지 로직 및 로그 기능 | **Backend**<br>- 인수인계(Handover) 기능 개발<br>- 드래그 앤 드롭 모듈 구성<br>- 인수인계서 PDF 내보내기 | **Frontend**<br>- 프론트엔드 개발 |
