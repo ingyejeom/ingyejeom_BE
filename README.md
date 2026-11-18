@@ -21,7 +21,6 @@ graph LR
     Backend <-->|Upload/Download| S3[(AWS S3)]
     Backend <-->|HTTP Request| Chatbot(Python RAG Chatbot)
 ```
-![ERD Image](./architecture.svg)
 
 ## 🗄️ Database ERD
 
